@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    @apply bg-background text-foreground;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  /* Light mode shadows - cards, buttons, containers */
+  :is(.card, [class*='card']) {
+    @apply shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-shadow;
+  }
+
+  button {
+    @apply shadow-[var(--button-shadow)] hover:shadow-[var(--button-shadow-hover)] transition-shadow;
+  }
+
+  /* Colorful icons in light mode */
+  [class*='lucide'] {
+    @apply transition-colors;
+  }
+}
+
+@layer components {
+  /* Light mode icon color utilities */
+  .icon-primary {
+    @apply text-[var(--icon-primary)];
+  }
+
+  .icon-success {
+    @apply text-[var(--icon-success)];
+  }
+
+  .icon-warning {
+    @apply text-[var(--icon-warning)];
+  }
+
+  .icon-info {
+    @apply text-[var(--icon-info)];
+  }
+
+  .icon-accent {
+    @apply text-[var(--icon-accent)];
+  }
+
+  .icon-purple {
+    @apply text-[var(--icon-purple)];
+  }
+
+  /* Shadow utilities for light mode */
+  .shadow-card {
+    @apply shadow-[var(--card-shadow)] hover:shadow-[var(--card-shadow-hover)] transition-shadow;
+  }
+
+  .shadow-card-hover {
+    @apply shadow-[var(--card-shadow-hover)];
+  }
+
+  .shadow-button {
+    @apply shadow-[var(--button-shadow)] hover:shadow-[var(--button-shadow-hover)] transition-shadow;
+  }
+}
+
+@import 'tw-animate-css';

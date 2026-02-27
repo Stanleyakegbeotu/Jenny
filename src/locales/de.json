@@ -1,0 +1,133 @@
+{
+  "nav": {
+    "logo": "NENSHA JENNIFER",
+    "home": "Startseite",
+    "books": "Bücher",
+    "about": "Über",
+    "contact": "Kontakt",
+    "admin": "Admin",
+    "readLatest": "Letzte Geschichte Lesen"
+  },
+  "hero": {
+    "title": "Entdecken Sie Kinematische Geschichten",
+    "subtitle": "Tauchen Sie ein in fesselnde Erzählungen mit kinematografischer Genauigkeit",
+    "cta": "Sammlung Erkunden"
+  },
+  "featured": {
+    "reads": "Aufrufe",
+    "comments": "Kommentare",
+    "followers": "Follower",
+    "previewChapter": "Kapitelvorschau",
+    "playNarration": "Erzählung Abspielen",
+    "readOnInkitt": "Auf Inkitt Lesen",
+    "readOnWattpad": "Auf Wattpad Lesen",
+    "loading": "Featurierte Bücher Werden Geladen..."
+  },
+  "books": {
+    "title": "Weitere Geschichten Entdecken",
+    "subtitle": "Erkunden Sie eine Sammlung romantischer Geschichten, die Ihr Herz berühren und Ihre Fantasie entfachen.",
+    "previewChapter": "Kapitelvorschau",
+    "listen": "Hören",
+    "inkitt": "Inkitt",
+    "wattpad": "Wattpad",
+    "noBooks": "Derzeit sind keine Bücher verfügbar.",
+    "loading": "Bücher Werden Geladen..."
+  },
+  "socialProof": {
+    "title": "Geliebt von Lesern auf der Ganzen Welt",
+    "subtitle": "Schließen Sie sich Tausenden von Lesern an, die ihre neue Lieblingsgeschichte entdeckt haben",
+    "followers": "Aktive Leser",
+    "reviews": "Positive Bewertungen",
+    "countries": "Erreichte Länder",
+    "hours": "Stunden Inhalt"
+  },
+  "about": {
+    "title": "Über Unsere Sammlung",
+    "subtitle": "Gestaltet für den Modernen Leser",
+    "description": "Unsere sorgfältig kurierte Sammlung vereint Geschichten, die Romantik, Abenteuer und Emotion mit kinematischer Erzählung verbinden. Jede Erzählung ist darauf ausgerichtet, Leser in Welten der Leidenschaft und des Geheimnisses zu transportieren.",
+    "features": {
+      "cinematic": "Kinematische Erzählungen",
+      "cinematicDesc": "Geschichten, die mit visueller Präzision und emotionaler Tiefe gestaltet wurden",
+      "multiPlatform": "Plattformübergreifender Zugriff",
+      "multiPlatformDesc": "Lesen Sie auf Ihrer bevorzugten Plattform - Inkitt, Wattpad oder unserem nativen Player",
+      "audioNarration": "Audio-Narration",
+      "audioNarrationDesc": "Professionelle Erzählungen bringen Geschichten mit außergewöhnlicher Sprachleistung zum Leben",
+      "community": "Globale Gemeinschaft",
+      "communityDesc": "Verbinden Sie sich mit Lesern aus der ganzen Welt und teilen Sie Ihre Gedanken"
+    },
+    "authorTitle": "Über die Autorin",
+    "totalReads": "Gesamtaufrufe",
+    "booksPublished": "Veröffentlichte Bücher",
+    "followers": "Follower"
+  },
+  "subscribe": {
+    "title": "Bleiben Sie Auf Dem Laufenden",
+    "subtitle": "Abonnieren Sie, um Updates zu neuen Versionen und exklusivem Inhalt zu erhalten",
+    "email": "E-Mail Eingeben",
+    "country": "Land",
+    "selectCountry": "Wählen Sie Ihr Land",
+    "privacy": "Mit dem Abonnieren stimmen Sie unserer Datenschutzrichtlinie zu.",
+    "subscribe": "Abonnieren",
+    "success": "Danke fürs Abonnieren!",
+    "error": "Fehler beim Abonnieren. Bitte versuchen Sie es erneut.",
+    "validationError": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+  },
+  "contact": {
+    "title": "Kontaktieren Sie Uns",
+    "subtitle": "Haben Sie Fragen oder Feedback? Wir würden uns gerne von Ihnen hören",
+    "name": "Ihr Name",
+    "email": "Ihre E-Mail",
+    "message": "Ihre Nachricht",
+    "send": "Nachricht Senden",
+    "success": "Nachricht erfolgreich gesendet!",
+    "error": "Fehler beim Senden der Nachricht. Bitte versuchen Sie es erneut.",
+    "validationError": "Bitte füllen Sie alle Felder aus.",
+    "businessInquiries": "Geschäftsanfragen"
+  },
+  "footer": {
+    "description": "Entdecken Sie fesselnde Romantikgeschichten mit kinematographischer Präzision. Tauchen Sie ein in Welten der Leidenschaft und des Geheimnisses.",
+    "quickLinks": "Schnelllinks",
+    "forReaders": "Für Leser",
+    "madeWith": "Mit ❤️ von der Nensha Jennifer Autorin",
+    "settings": "Einstellungen",
+    "lightMode": "Heller Modus",
+    "darkMode": "Dunkler Modus",
+    "mode": "Modus",
+    "selectLanguage": "Wählen Sie Ihre Sprache",
+    "copyright": "© 2026 Nensha Jennifer. Alle Rechte Vorbehalten.",
+    "privacy": "Datenschutzerklärung",
+    "terms": "Nutzungsbedingungen",
+    "contact": "Kontaktieren Sie Uns"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "books": "Bücher",
+    "chapters": "Kapitel",
+    "audio": "Audio",
+    "subscribers": "Abonnenten",
+    "analytics": "Analytik",
+    "settings": "Einstellungen",
+    "backToLanding": "Zurück zur Startseite"
+  },
+  "modal": {
+    "chapter": "Kapitel",
+    "preview": "Vorschau",
+    "continueOnInkitt": "Auf Inkitt Fortfahren",
+    "continueOnWattpad": "Auf Wattpad Fortfahren",
+    "loading": "Kapitel Wird Geladen...",
+    "error": "Fehler beim Laden des Kapitels"
+  },
+  "common": {
+    "loading": "Wird Geladen...",
+    "error": "Ein Fehler Ist Aufgetreten",
+    "success": "Erfolg",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "add": "Hinzufügen",
+    "close": "Schließen",
+    "search": "Suchen",
+    "filter": "Filtern"
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "nav": {
+    "logo": "NENSHA JENNIFER",
+    "home": "Home",
+    "books": "Books",
+    "about": "About",
+    "contact": "Contact",
+    "admin": "Admin",
+    "readLatest": "Read Latest Story"
+  },
+  "hero": {
+    "title": "Discover Cinematic Stories",
+    "subtitle": "Immerse yourself in captivating narratives crafted with cinematic precision",
+    "cta": "Explore Collection"
+  },
+  "featured": {
+    "reads": "Reads",
+    "comments": "Comments",
+    "followers": "Followers",
+    "previewChapter": "Preview Chapter",
+    "playNarration": "Play Narration",
+    "readOnInkitt": "Read on Inkitt",
+    "readOnWattpad": "Read on Wattpad",
+    "loading": "Loading featured books..."
+  },
+  "books": {
+    "title": "Discover More Stories",
+    "subtitle": "Explore a collection of romantic tales that will touch your heart and ignite your imagination.",
+    "previewChapter": "Preview Chapter",
+    "listen": "Listen",
+    "inkitt": "Inkitt",
+    "wattpad": "Wattpad",
+    "noBooks": "No books available yet.",
+    "loading": "Loading books..."
+  },
+  "socialProof": {
+    "title": "Loved by Readers Worldwide",
+    "subtitle": "Join thousands of readers who have discovered their new favorite stories",
+    "followers": "Active Readers",
+    "reviews": "Positive Reviews",
+    "countries": "Countries Reached",
+    "hours": "Hours of Content"
+  },
+  "about": {
+    "title": "About Our Collection",
+    "subtitle": "Crafted for the Modern Reader",
+    "authorTitle": "About the Author",
+    "totalReads": "Total Reads",
+    "booksPublished": "Books Published",
+    "followers": "Followers",
+    "description": "Our carefully curated collection brings together stories that blend romance, adventure, and emotion with cinematic storytelling. Each narrative is designed to transport readers to worlds of passion and intrigue.",
+    "features": {
+      "cinematic": "Cinematic Narratives",
+      "cinematicDesc": "Stories crafted with visual precision and emotional depth",
+      "multiPlatform": "Multi-Platform Access",
+      "multiPlatformDesc": "Read on your preferred platform - Inkitt, Wattpad, or our native player",
+      "audioNarration": "Audio Narration",
+      "audioNarrationDesc": "Professional narrations bring stories to life with exceptional voice acting",
+      "community": "Global Community",
+      "communityDesc": "Connect with readers from around the world and share your thoughts"
+    }
+  },
+  "subscribe": {
+    "title": "Stay Updated",
+    "subtitle": "Subscribe to receive updates about new releases and exclusive content",
+    "country": "Country",
+    "selectCountry": "Select your country",
+    "email": "Enter your email",
+    "subscribe": "Subscribe",
+    "success": "Thank you for subscribing!",
+    "error": "Failed to subscribe. Please try again.",
+    "validationError": "Please enter a valid email address.",
+    "privacy": "We respect your privacy. Unsubscribe at any time."
+  },
+  "contact": {
+    "title": "Get in Touch",
+    "subtitle": "Have questions or feedback? We'd love to hear from you",
+    "businessInquiries": "For business and collaboration inquiries",
+    "name": "Your Name",
+    "email": "Your Email",
+    "message": "Your Message",
+    "send": "Send Message",
+    "success": "Message sent successfully!",
+    "error": "Failed to send message. Please try again.",
+    "validationError": "Please fill in all fields."
+  },
+  "footer": {
+    "quickLinks": "Quick Links",
+    "settings": "Settings",
+    "description": "International romance author captivating readers worldwide with tales of love, passion, and emotional depth.",
+    "madeWith": "Made with",
+    "forReaders": "for readers worldwide",
+    "copyright": "© 2026 NENSHA JENNIFER. All rights reserved.",
+    "lightMode": "Light",
+    "darkMode": "Dark",
+    "mode": "Mode",
+    "selectLanguage": "Select Language",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "contact": "Contact Us"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "books": "Books",
+    "chapters": "Chapters",
+    "audio": "Audio",
+    "subscribers": "Subscribers",
+    "analytics": "Analytics",
+    "settings": "Settings",
+    "backToLanding": "Back to Landing Page"
+  },
+  "modal": {
+    "chapter": "Chapter",
+    "preview": "Preview",
+    "continueOnInkitt": "Continue on Inkitt",
+    "continueOnWattpad": "Continue on Wattpad",
+    "loading": "Loading chapter...",
+    "error": "Failed to load chapter"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter"
+  }
+}

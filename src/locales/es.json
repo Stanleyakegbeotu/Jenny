@@ -1,0 +1,133 @@
+{
+  "nav": {
+    "logo": "NENSHA JENNIFER",
+    "home": "Inicio",
+    "books": "Libros",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "admin": "Administrador",
+    "readLatest": "Leer Última Historia"
+  },
+  "hero": {
+    "title": "Descubre Historias Cinematográficas",
+    "subtitle": "Sumérgete en narrativas cautivadoras elaboradas con precisión cinematográfica",
+    "cta": "Explorar Colección"
+  },
+  "featured": {
+    "reads": "Lecturas",
+    "comments": "Comentarios",
+    "followers": "Seguidores",
+    "previewChapter": "Vista Previa del Capítulo",
+    "playNarration": "Reproducir Narración",
+    "readOnInkitt": "Leer en Inkitt",
+    "readOnWattpad": "Leer en Wattpad",
+    "loading": "Cargando libros destacados..."
+  },
+  "books": {
+    "title": "Descubre Más Historias",
+    "subtitle": "Explora una colección de histórias románticas que tocarán tu corazón e iluminarán tu imaginación.",
+    "previewChapter": "Vista Previa del Capítulo",
+    "listen": "Escuchar",
+    "inkitt": "Inkitt",
+    "wattpad": "Wattpad",
+    "noBooks": "No hay libros disponibles aún.",
+    "loading": "Cargando libros..."
+  },
+  "socialProof": {
+    "title": "Amado por Lectores en Todo el Mundo",
+    "subtitle": "Únete a miles de lectores que han descubierto su nueva historia favorita",
+    "followers": "Lectores Activos",
+    "reviews": "Críticas Positivas",
+    "countries": "Países Alcanzados",
+    "hours": "Horas de Contenido"
+  },
+  "about": {
+    "title": "Acerca de Nuestra Colección",
+    "subtitle": "Elaborada para el Lector Moderno",
+    "authorTitle": "Acerca del Autor",
+    "totalReads": "Lecturas Totales",
+    "booksPublished": "Libros Publicados",
+    "followers": "Seguidores",
+    "description": "Nuestra cuidadosa colección reúne historias que combinan romance, aventura y emoción con narrativa cinematográfica. Cada narrativa está diseñada para transportar a los lectores a mundos de pasión e intriga.",
+    "features": {
+      "cinematic": "Narrativas Cinematográficas",
+      "cinematicDesc": "Historias elaboradas con precisión visual y profundidad emocional",
+      "multiPlatform": "Acceso Multiplataforma",
+      "multiPlatformDesc": "Lee en tu plataforma preferida - Inkitt, Wattpad o nuestro reproductor nativo",
+      "audioNarration": "Narración de Audio",
+      "audioNarrationDesc": "Las narraciones profesionales dan vida a las historias con actuación de voz excepcional",
+      "community": "Comunidad Global",
+      "communityDesc": "Conéctate con lectores de todo el mundo y comparte tus opiniones"
+    }
+  },
+  "subscribe": {
+    "title": "Mantente Actualizado",
+    "subtitle": "Suscríbete para recibir actualizaciones sobre nuevos lanzamientos y contenido exclusivo",
+    "country": "País",
+    "selectCountry": "Selecciona tu país",
+    "email": "Ingresa tu correo",
+    "subscribe": "Suscribirse",
+    "success": "¡Gracias por suscribirse!",
+    "error": "Error al suscribirse. Por favor, inténtalo de nuevo.",
+    "validationError": "Por favor ingresa una dirección de correo válida.",
+    "privacy": "Respetamos tu privacidad. Puedes desuscribirse en cualquier momento."
+  },
+  "contact": {
+    "title": "Ponte en Contacto",
+    "subtitle": "¿Tienes preguntas o comentarios? Nos encantaría escucharte",
+    "businessInquiries": "Para consultas comerciales y de colaboración",
+    "name": "Tu Nombre",
+    "email": "Tu Correo",
+    "message": "Tu Mensaje",
+    "send": "Enviar Mensaje",
+    "success": "¡Mensaje enviado correctamente!",
+    "error": "Error al enviar el mensaje. Por favor, inténtalo de nuevo.",
+    "validationError": "Por favor completa todos los campos."
+  },
+  "footer": {
+    "quickLinks": "Enlaces Rápidos",
+    "settings": "Configuración",
+    "description": "Autora internacional de romance que cautiva a lectores en todo el mundo con historias de amor, pasión y profundidad emocional.",
+    "madeWith": "Hecho con",
+    "forReaders": "para lectores de todo el mundo",
+    "copyright": "© 2026 NENSHA JENNIFER. Todos los derechos reservados.",
+    "lightMode": "Claro",
+    "darkMode": "Oscuro",
+    "mode": "Modo",
+    "selectLanguage": "Seleccionar Idioma",
+    "privacy": "Política de Privacidad",
+    "terms": "Términos de Servicio",
+    "contact": "Contáctanos"
+  },
+  "admin": {
+    "dashboard": "Panel de Control",
+    "books": "Libros",
+    "chapters": "Capítulos",
+    "audio": "Audio",
+    "subscribers": "Suscriptores",
+    "analytics": "Análisis",
+    "settings": "Configuración",
+    "backToLanding": "Volver a Página de Inicio"
+  },
+  "modal": {
+    "chapter": "Capítulo",
+    "preview": "Vista Previa",
+    "continueOnInkitt": "Continuar en Inkitt",
+    "continueOnWattpad": "Continuar en Wattpad",
+    "loading": "Cargando capítulo...",
+    "error": "Error al cargar el capítulo"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Añadir",
+    "close": "Cerrar",
+    "search": "Buscar",
+    "filter": "Filtrar"
+  }
+}

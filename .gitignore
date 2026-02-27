@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment variables (CRITICAL - never commit Supabase keys!)
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+
+# Vite cache
+.vite/
+.cache/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Development
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+dist-types/
+
+# ESLint
+.eslintcache
+
+# Misc
+.turbo
