@@ -771,102 +771,290 @@ export async function replyToComment(
 
 export async function likeBook(bookId: string, userId: string = 'visitor'): Promise<boolean> {
   try {
-    // Check if like exists
-    const { data: interaction, error: selectError } = await supabase
+    console.log('📢 [likeBook] Starting with bookId:', bookId, 'userId:', userId);
+    
+    // Check if already liked
+    const { data: existingLike, error: checkError } = await supabase
       .from('book_interactions')
-      .select('*')
+      .select('id')
       .eq('book_id', bookId)
       .eq('user_id', userId)
+      .eq('interaction_type', 'like')
       .maybeSingle();
 
-    if (selectError && selectError.code !== 'PGRST116') {
-      console.error('Error checking like status:', selectError);
-      throw selectError;
+    if (checkError) {
+      console.warn('Warning checking existing like:', checkError);
     }
 
-    if (interaction && interaction.liked) {
-      // Unlike
-      const { error: updateError } = await supabase
-        .from('book_interactions')
-        .update({ liked: false })
-        .eq('id', interaction.id);
-      if (updateError) throw updateError;
-    } else if (interaction) {
-      // Like
-      const { error: updateError } = await supabase
-        .from('book_interactions')
-        .update({ liked: true, liked_at: new Date().toISOString() })
-        .eq('id', interaction.id);
-      if (updateError) throw updateError;
-    } else {
-      // New like
-      const { error: insertError } = await supabase
-        .from('book_interactions')
-        .insert([{
-          book_id: bookId,
-          user_id: userId,
-          liked: true,
-          liked_at: new Date().toISOString(),
-        }]);
-      if (insertError) throw insertError;
+    // If already liked, don't add duplicate
+    if (existingLike) {
+      console.log('Already liked by user');
+      return true;
     }
 
+    console.log('📢 [likeBook] Inserting like record...');
+    // Insert a like record
+    const { data, error: insertError } = await supabase
+      .from('book_interactions')
+      .insert([{
+        book_id: bookId,
+        user_id: userId,
+        interaction_type: 'like',
+      }])
+      .select();
+    
+    if (insertError) {
+      console.error('❌ Error inserting like:', {
+        code: insertError.code,
+        message: insertError.message,
+        details: insertError.details,
+        hint: insertError.hint,
+      });
+      return false;
+    }
+
+    console.log('✅ Like inserted successfully:', data);
     return true;
   } catch (error) {
-    console.error('Error liking book:', error);
+    console.error('❌ Exception liking book:', error);
     return false;
   }
 }
 
 export async function isBookLikedByUser(bookId: string, userId: string = 'visitor'): Promise<boolean> {
   try {
-    if (!hasSupabaseConfig) return false;
+    if (!hasSupabaseConfig) {
+      console.warn('⚠️ Supabase not configured');
+      return false;
+    }
 
+    console.log('🔍 Checking if book liked by user:', { bookId, userId });
+    // Check if user has liked this book
     const { data, error } = await supabase
       .from('book_interactions')
-      .select('liked')
+      .select('id')
       .eq('book_id', bookId)
       .eq('user_id', userId)
-      .single();
+      .eq('interaction_type', 'like')
+      .maybeSingle();
 
-    if (error) return false;
-    return data?.liked || false;
+    if (error) {
+      console.error('❌ Error checking like status:', error);
+      return false;
+    }
+
+    console.log('📍 Like status result:', !!data);
+    return !!data;
   } catch (error) {
-    console.debug('Could not check like status (this is OK):', error);
+    console.error('❌ Exception checking like status:', error);
     return false;
   }
 }
 
 export async function trackBookClick(bookId: string): Promise<boolean> {
   try {
-    await supabase
+    console.log('📊 [trackBookClick] Starting:', bookId);
+    const { data, error } = await supabase
       .from('book_interactions')
       .insert([{
         book_id: bookId,
         user_id: 'visitor',
         interaction_type: 'click',
-        clicked_at: new Date().toISOString(),
-      }]);
+      }])
+      .select();
+    
+    if (error) {
+      console.error('❌ [trackBookClick] Error:', error);
+      return false;
+    }
+    
+    console.log('✅ [trackBookClick] Success:', data);
     return true;
   } catch (error) {
-    console.error('Error tracking click:', error);
+    console.error('❌ [trackBookClick] Exception:', error);
     return false;
   }
 }
 
 export async function trackBookRead(bookId: string): Promise<boolean> {
   try {
-    await supabase
+    console.log('📊 [trackBookRead] Starting:', bookId);
+    const { data, error } = await supabase
       .from('book_interactions')
       .insert([{
         book_id: bookId,
         user_id: 'visitor',
         interaction_type: 'read',
-        read_at: new Date().toISOString(),
-      }]);
+      }])
+      .select();
+    
+    if (error) {
+      console.error('❌ [trackBookRead] Error:', error);
+      return false;
+    }
+    
+    console.log('✅ [trackBookRead] Success:', data);
     return true;
   } catch (error) {
-    console.error('Error tracking read:', error);
+    console.error('❌ [trackBookRead] Exception:', error);
     return false;
+  }
+}
+
+export async function likeComment(commentId: string): Promise<boolean> {
+  try {
+    // Get current like count
+    const { data: comment, error: selectError } = await supabase
+      .from('book_comments')
+      .select('likes')
+      .eq('id', commentId)
+      .maybeSingle();
+
+    if (selectError) {
+      console.error('❌ Error fetching comment:', selectError);
+      return false;
+    }
+
+    if (!comment) {
+      console.error('❌ Comment not found');
+      return false;
+    }
+
+    // Increment likes
+    const { data, error: updateError } = await supabase
+      .from('book_comments')
+      .update({ likes: (comment.likes || 0) + 1 })
+      .eq('id', commentId)
+      .select();
+
+    if (updateError) {
+      console.error('❌ Error updating comment likes:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint,
+      });
+      return false;
+    }
+
+    console.log('✅ Comment like updated successfully:', data);
+    return true;
+  } catch (error) {
+    console.error('❌ Exception liking comment:', error);
+    return false;
+  }
+}
+
+export async function deleteSubscriber(subscriberId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('subscribers')
+      .delete()
+      .eq('id', subscriberId);
+
+    if (error) {
+      console.error('Error deleting subscriber:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting subscriber:', error);
+    return false;
+  }
+}
+
+// ============================================================================
+// GET LIKE COUNTS (NEW - THIS WAS MISSING!)
+// ============================================================================
+
+/**
+ * Get total likes count for a book from book_interactions table
+ */
+export async function getBookLikeCount(bookId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('book_interactions')
+      .select('id')
+      .eq('book_id', bookId)
+      .eq('interaction_type', 'like');
+
+    if (error) {
+      console.error('Error counting book likes:', error);
+      return 0;
+    }
+
+    return (data || []).length;
+  } catch (error) {
+    console.error('Error in getBookLikeCount:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get like count from book_comments table for a specific book
+ */
+export async function getCommentLikesForBook(bookId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('book_comments')
+      .select('likes')
+      .eq('book_id', bookId);
+
+    if (error) {
+      console.error('Error getting comment likes:', error);
+      return 0;
+    }
+
+    return (data || []).reduce((sum, comment) => sum + (comment.likes || 0), 0);
+  } catch (error) {
+    console.error('Error in getCommentLikesForBook:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get total read count for a book from book_interactions table
+ */
+export async function getBookReadCount(bookId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('book_interactions')
+      .select('id')
+      .eq('book_id', bookId)
+      .eq('interaction_type', 'read');
+
+    if (error) {
+      console.error('Error counting book reads:', error);
+      return 0;
+    }
+
+    return (data || []).length;
+  } catch (error) {
+    console.error('Error in getBookReadCount:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get total click count for a book from book_interactions table
+ */
+export async function getBookClickCount(bookId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('book_interactions')
+      .select('id')
+      .eq('book_id', bookId)
+      .eq('interaction_type', 'click');
+
+    if (error) {
+      console.error('Error counting book clicks:', error);
+      return 0;
+    }
+
+    return (data || []).length;
+  } catch (error) {
+    console.error('Error in getBookClickCount:', error);
+    return 0;
   }
 }

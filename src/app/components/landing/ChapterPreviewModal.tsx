@@ -6,7 +6,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { AudioPlayer } from './AudioPlayer';
 import { Book as SupabaseBook, fetchChapters, Chapter } from '../../../lib/supabaseClient';
-import { trackPreviewOpen } from '../../../lib/analytics';
+import { trackPreviewOpen, trackChapterRead } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
 
 interface ChapterPreviewModalProps {
@@ -19,6 +19,7 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasTrackedRead, setHasTrackedRead] = useState(false);
   const { isSupported: ttsSupported, isSpeaking, speak, stop } = useTextToSpeech();
 
   useEffect(() => {
@@ -27,10 +28,13 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
     async function loadChapters() {
       try {
         setLoading(true);
-        trackPreviewOpen(book.id, book.title);
-        const data = await fetchChapters(book.id);
-        setChapters(data);
-        setError(null);
+        setHasTrackedRead(false); // Reset tracking when modal opens
+        if (book) {
+          trackPreviewOpen(book.id, book.title);
+          const data = await fetchChapters(book.id);
+          setChapters(data);
+          setError(null);
+        }
       } catch (err) {
         setError('Failed to load chapter');
         console.error(err);
@@ -53,6 +57,21 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
       stop();
     } else {
       speak(chapterContent);
+    }
+  };
+
+  // Handle scroll detection to track when user reaches end
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (hasTrackedRead || !book || !chapters[0]) return;
+
+    const element = e.currentTarget;
+    const scrollPosition = element.scrollTop + element.clientHeight;
+    const totalHeight = element.scrollHeight;
+    const threshold = 0.9; // Track when user scrolls to 90% of content
+
+    if (scrollPosition >= totalHeight * threshold) {
+      setHasTrackedRead(true);
+      trackChapterRead(book.id, chapters[0].id, chapters[0].title);
     }
   };
 
@@ -139,7 +158,7 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
             </div>
 
             {/* Content */}
-            <ScrollArea className="h-[calc(100%-200px)]">
+            <ScrollArea className="h-[calc(100%-200px)]" onScroll={handleScroll}>
               {loading ? (
                 <div className="p-8 text-center text-muted-foreground">
                   <p>Loading chapter...</p>
@@ -164,7 +183,11 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
             {/* Footer */}
             <div className="absolute bottom-0 left-0 right-0 p-6 bg-secondary/50 backdrop-blur-lg border-t border-border">
               <div className="max-w-3xl mx-auto space-y-4">
-                {firstChapter?.audio_url && <AudioPlayer audioUrl={firstChapter.audio_url} />}
+                {firstChapter?.chapter_number && (
+                  <div className="text-xs text-muted-foreground mb-3">
+                    Chapter {firstChapter.chapter_number}
+                  </div>
+                )}
                 {book.book_link && book.book_platform && (
                   <a
                     href={book.book_link}

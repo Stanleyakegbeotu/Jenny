@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, Search, Mail, Send, X } from 'lucide-react';
+import { Download, Search, Mail, Send, X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
-import { fetchSubscribers, Subscriber, sendBulkEmail } from '../../../lib/supabaseClient';
+import { fetchSubscribers, Subscriber, sendBulkEmail, deleteSubscriber } from '../../../lib/supabaseClient';
 import { motion } from 'motion/react';
 
 export function SubscribersManagement() {
@@ -32,6 +32,9 @@ export function SubscribersManagement() {
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendSuccess, setSendSuccess] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [subscriberToDelete, setSubscriberToDelete] = useState<Subscriber | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadSubscribers();
@@ -131,6 +134,29 @@ export function SubscribersManagement() {
     }
   };
 
+  const handleDeleteClick = (subscriber: Subscriber) => {
+    setSubscriberToDelete(subscriber);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!subscriberToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const success = await deleteSubscriber(subscriberToDelete.id);
+      if (success) {
+        setSubscribers(prev => prev.filter(sub => sub.id !== subscriberToDelete.id));
+        setIsDeleteModalOpen(false);
+        setSubscriberToDelete(null);
+      }
+    } catch (error) {
+      console.error('Error deleting subscriber:', error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -193,12 +219,13 @@ export function SubscribersManagement() {
                     <TableHead>Country</TableHead>
                     <TableHead>Subscribed Date</TableHead>
                     <TableHead className="text-right">Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSubscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
                         No subscribers match your search
                       </TableCell>
                     </TableRow>
@@ -220,6 +247,16 @@ export function SubscribersManagement() {
                           >
                             {subscriber.unsubscribed_at ? 'Unsub' : 'Active'}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(subscriber)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -306,6 +343,39 @@ export function SubscribersManagement() {
                 {isSending ? 'Sending...' : 'Send Email'}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Subscriber</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {subscriberToDelete?.email}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-3 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setSubscriberToDelete(null);
+              }}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

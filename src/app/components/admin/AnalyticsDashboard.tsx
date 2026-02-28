@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '../ui/table';
 import { motion } from 'motion/react';
-import { fetchAnalytics, AnalyticsEvent, fetchBooks, fetchSubscribers, getBookCommentsCount, getBookCommentLikesTotal } from '../../../lib/supabaseClient';
+import { fetchAnalytics, AnalyticsEvent, fetchBooks, fetchSubscribers, getBookCommentsCount, getBookCommentLikesTotal, getBookLikeCount, getBookReadCount, getBookClickCount } from '../../../lib/supabaseClient';
 
 const ITEMS_PER_PAGE = 10;
 const DAYS_PER_PAGE = 7;
@@ -136,17 +136,24 @@ export function AnalyticsDashboard() {
         }
       });
 
-      // Fetch actual comment and like counts from database for each book
+      // Fetch actual comment, like, read, and click counts from database for each book
       const bookAnalyticsWithCounts = await Promise.all(
         Array.from(bookMap.values()).map(async (analytics) => {
-          const [commentCount, likeCount] = await Promise.all([
+          const [commentCount, bookLikeCount, commentLikeCount, readCount, clickCount] = await Promise.all([
             getBookCommentsCount(analytics.bookId),
+            getBookLikeCount(analytics.bookId),
             getBookCommentLikesTotal(analytics.bookId),
+            getBookReadCount(analytics.bookId),
+            getBookClickCount(analytics.bookId),
           ]);
+          // Total likes = book likes + comment likes
+          const totalLikes = bookLikeCount + commentLikeCount;
           return {
             ...analytics,
             comments: commentCount,
-            likes: likeCount,
+            likes: totalLikes,
+            reads: readCount,
+            views: clickCount, // views = clicks on the book
           };
         })
       );

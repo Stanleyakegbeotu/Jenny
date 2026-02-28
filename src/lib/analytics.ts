@@ -1,4 +1,4 @@
-import { trackEvent as supabaseTrackEvent } from './supabaseClient';
+import { trackEvent as supabaseTrackEvent, trackBookRead, trackBookClick } from './supabaseClient';
 
 /**
  * Centralized analytics tracking utility
@@ -135,6 +135,12 @@ export async function trackExternalLink(
   bookId?: string,
   bookTitle?: string
 ): Promise<void> {
+  // Track to database (actual interaction)
+  if (bookId) {
+    await trackBookClick(bookId);
+  }
+  
+  // Also track to analytics (for metrics)
   await trackAnalytics(
     AnalyticsEvents.EXTERNAL_LINK_CLICK,
     { platform, title: bookTitle },
@@ -162,6 +168,26 @@ export async function trackCommentLiked(bookId: string, commentId?: string): Pro
   await trackAnalytics(
     'comment_liked',
     { comment_id: commentId },
+    undefined,
+    bookId
+  );
+}
+
+/**
+ * Track chapter read to completion
+ */
+export async function trackChapterRead(
+  bookId: string,
+  chapterId?: string,
+  chapterTitle?: string
+): Promise<void> {
+  // Track to database (actual interaction)
+  await trackBookRead(bookId);
+  
+  // Also track to analytics (for metrics)
+  await trackAnalytics(
+    AnalyticsEvents.PREVIEW_READ,
+    { chapter_id: chapterId, chapter_title: chapterTitle },
     undefined,
     bookId
   );
