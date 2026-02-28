@@ -283,7 +283,6 @@ export async function fetchSubscribers(): Promise<Subscriber[]> {
     const { data, error } = await supabase
       .from('subscribers')
       .select('*')
-      .is('unsubscribed_at', null)
       .order('subscribed_at', { ascending: false });
 
     if (error) throw error;
@@ -298,7 +297,7 @@ export async function unsubscribeEmail(email: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('subscribers')
-      .update({ unsubscribed_at: new Date().toISOString() })
+      .update({ is_active: false })
       .eq('email', email);
 
     if (error) throw error;
@@ -381,9 +380,8 @@ export async function trackEvent(
       .insert([
         {
           event_type: eventType,
-          user_id: userId,
+          user_identifier: userId,
           book_id: bookId,
-          metadata,
           timestamp: new Date().toISOString(),
         },
       ])

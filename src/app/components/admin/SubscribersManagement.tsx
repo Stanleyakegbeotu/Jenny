@@ -64,7 +64,7 @@ export function SubscribersManagement() {
       ...subscribers.map((sub) => [
         sub.email,
         new Date(sub.subscribed_at).toLocaleDateString(),
-        sub.unsubscribed_at ? 'Unsubscribed' : 'Active',
+        sub.is_active !== false ? 'Active' : 'Unsubscribed',
       ]),
     ]
       .map((row) => row.map((cell) => `"${cell}"`).join(','))
@@ -98,7 +98,7 @@ export function SubscribersManagement() {
     setSendError(null);
 
     try {
-      const activeSubscribers = subscribers.filter((sub) => !sub.unsubscribed_at);
+      const activeSubscribers = subscribers.filter((sub) => sub.is_active !== false);
       
       if (activeSubscribers.length === 0) {
         setSendError('No active subscribers to send to');
