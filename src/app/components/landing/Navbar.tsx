@@ -136,16 +136,6 @@ export function Navbar() {
               )}
             </Button>
 
-            {/* Admin Dashboard Link */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden lg:flex"
-              onClick={() => navigate('/admin')}
-            >
-              {t('nav.admin')}
-            </Button>
-
             {/* CTA Button */}
             <Button
               className="hidden lg:flex bg-primary hover:bg-primary/90 text-primary-foreground"

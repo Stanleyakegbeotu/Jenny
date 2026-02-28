@@ -6,7 +6,7 @@ import { BooksManagement } from '../components/admin/BooksManagement';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
 import { SubscribersManagement } from '../components/admin/SubscribersManagement';
 import { SettingsPage } from '../components/admin/SettingsPage';
-import { Moon, Sun, Menu, Download, Bell } from 'lucide-react';
+import { Moon, Sun, Menu, Download, Bell, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useTheme } from '../contexts/ThemeContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
@@ -153,10 +153,11 @@ export function AdminDashboard() {
             <div className="flex items-center gap-4">
               <Button 
                 variant="ghost" 
-                size="sm"
+                size="icon"
                 onClick={() => navigate('/')}
+                title="Exit Admin Dashboard"
               >
-                ← Back to Landing Page
+                <X className="w-5 h-5" />
               </Button>
               {badgeCount > 0 && (
                 <div className="relative">
