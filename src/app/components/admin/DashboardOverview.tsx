@@ -154,8 +154,8 @@ export function DashboardOverview() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl mb-2 font-playfair">Dashboard Overview</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl mb-2 font-playfair truncate">Dashboard Overview</h1>
+        <p className="text-muted-foreground text-sm md:text-base">
           Welcome back! Here's what's happening with your author platform.
         </p>
       </div>
@@ -209,13 +209,13 @@ export function DashboardOverview() {
               recentActivity.map((activity, index) => (
                 <div
                   key={index}
-                  className="flex items-start justify-between py-3 border-b border-border last:border-0"
+                  className="flex flex-col md:flex-row md:items-start md:justify-between py-3 px-2 md:px-0 border-b border-border last:border-0 gap-2"
                 >
-                  <div>
-                    <div className="font-medium text-foreground">{activity.action}</div>
-                    <div className="text-sm text-muted-foreground">{activity.detail}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-foreground text-sm md:text-base">{activity.action}</div>
+                    <div className="text-xs md:text-sm text-muted-foreground break-words line-clamp-2">{activity.detail}</div>
                   </div>
-                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                  <div className="text-xs md:text-sm text-muted-foreground flex-shrink-0 md:whitespace-nowrap">
                     {activity.time}
                   </div>
                 </div>

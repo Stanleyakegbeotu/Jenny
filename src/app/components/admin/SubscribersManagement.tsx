@@ -134,43 +134,43 @@ export function SubscribersManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl mb-2 font-playfair">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl md:text-3xl mb-2 font-playfair truncate">
             Email Subscribers
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm md:text-base">
             Manage your email subscriber list ({subscribers.length} total subscribers)
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90" onClick={handleExport}>
-          <Download className="w-4 h-4 mr-2 text-[var(--icon-success)]" />
-          Export CSV
+        <Button className="bg-primary hover:bg-primary/90 w-full md:w-auto" onClick={handleExport}>
+          <Download className="w-4 h-4 md:mr-2 text-[var(--icon-success)]" />
+          <span className="hidden md:inline">Export CSV</span>
         </Button>
       </div>
 
       {/* Search and Actions */}
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-            <CardTitle>All Subscribers ({filteredSubscribers.length})</CardTitle>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none">
+          <div className="flex flex-col gap-4">
+            <CardTitle className="text-lg md:text-xl">All Subscribers ({filteredSubscribers.length})</CardTitle>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--icon-info)]" />
                 <Input
                   type="text"
                   placeholder="Search subscribers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
+                  className="pl-10 w-full"
                 />
               </div>
               <Button
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 onClick={() => setIsEmailModalOpen(true)}
               >
-                <Mail className="w-4 h-4 mr-2 text-[var(--icon-warning)]" />
-                Send Email
+                <Mail className="w-4 h-4 sm:mr-2 text-[var(--icon-warning)]" />
+                <span className="hidden sm:inline">Send Email</span>
               </Button>
             </div>
           </div>
@@ -205,20 +205,20 @@ export function SubscribersManagement() {
                   ) : (
                     filteredSubscribers.map((subscriber) => (
                       <TableRow key={subscriber.id}>
-                        <TableCell className="font-medium">{subscriber.email}</TableCell>
-                        <TableCell>{subscriber.country || 'Not specified'}</TableCell>
-                        <TableCell>
-                          {new Date(subscriber.subscribed_at).toLocaleDateString()}
+                        <TableCell className="font-medium text-xs md:text-sm truncate">{subscriber.email}</TableCell>
+                        <TableCell className="text-xs md:text-sm">{subscriber.country || 'N/A'}</TableCell>
+                        <TableCell className="text-xs md:text-sm whitespace-nowrap">
+                          {new Date(subscriber.subscribed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </TableCell>
                         <TableCell className="text-right">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs ${
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
                               subscriber.unsubscribed_at
                                 ? 'bg-red-500/10 text-red-500'
                                 : 'bg-green-500/10 text-green-500'
                             }`}
                           >
-                            {subscriber.unsubscribed_at ? 'Unsubscribed' : 'Active'}
+                            {subscriber.unsubscribed_at ? 'Unsub' : 'Active'}
                           </span>
                         </TableCell>
                       </TableRow>

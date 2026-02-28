@@ -131,9 +131,9 @@ export function AdminDashboard() {
       
       <div className="flex-1 overflow-auto">
         {/* Top Bar */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border px-8 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border px-4 md:px-8 py-3 md:py-4">
+          <div className="flex justify-between items-center gap-2 md:gap-4">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -141,16 +141,16 @@ export function AdminDashboard() {
               >
                 <Menu className="w-5 h-5" />
               </Button>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs md:text-sm text-muted-foreground truncate">
                 {new Date().toLocaleDateString('en-US', {
-                  weekday: 'long',
+                  weekday: 'short',
                   year: 'numeric',
-                  month: 'long',
+                  month: 'short',
                   day: 'numeric',
                 })}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
               <Button 
                 variant="ghost" 
                 size="icon"
@@ -175,22 +175,6 @@ export function AdminDashboard() {
                   </div>
                 </div>
               )}
-              {isInstallable && !isInstalled && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={installApp}
-                  className="gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Install App
-                </Button>
-              )}
-              {isInstalled && (
-                <span className="text-xs text-muted-foreground px-2 py-1 bg-secondary rounded">
-                  ✓ App Installed
-                </span>
-              )}
               <Button variant="ghost" size="icon" onClick={toggleTheme}>
                 {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </Button>
@@ -199,7 +183,7 @@ export function AdminDashboard() {
         </div>
 
         {/* Main Content */}
-        <div className="p-8">{renderPage()}</div>
+        <div className="p-4 md:p-8">{renderPage()}</div>
       </div>
     </div>
   );

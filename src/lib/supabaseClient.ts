@@ -23,9 +23,8 @@ export interface Book {
   title: string;
   description: string;
   cover_url: string;
-  inkitt_url?: string;
-  wattpad_url?: string;
-  audio_url?: string;
+  book_link?: string;
+  book_platform?: string;
   created_at: string;
   updated_at: string;
   totalReads?: number;
@@ -59,7 +58,7 @@ export interface Chapter {
   title: string;
   content: string;
   preview_text?: string;
-  order: number;
+  chapter_number: number;
   created_at: string;
 }
 
@@ -156,15 +155,21 @@ export async function updateBook(id: string, updates: Partial<Book>): Promise<Bo
 
 export async function deleteBook(id: string): Promise<boolean> {
   try {
+    console.log('Attempting to delete book:', id);
     const { error } = await supabase
       .from('books')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Delete error details:', error);
+      throw error;
+    }
+    console.log('Book deleted successfully:', id);
     return true;
   } catch (error) {
-    console.error('Error deleting book:', error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error('Error deleting book:', errorMsg);
     return false;
   }
 }
@@ -176,7 +181,7 @@ export async function fetchChapters(bookId: string): Promise<Chapter[]> {
       .from('chapters')
       .select('*')
       .eq('book_id', bookId)
-      .order('order', { ascending: true });
+      .order('chapter_number', { ascending: true });
 
     if (error) throw error;
     return data || [];
@@ -225,7 +230,7 @@ export async function updateChapter(id: string, updates: Partial<Chapter>): Prom
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -375,6 +380,12 @@ export async function trackEvent(
   metadata?: Record<string, unknown>
 ): Promise<AnalyticsEvent | null> {
   try {
+    // Skip tracking if Supabase is not configured
+    if (!hasSupabaseConfig) {
+      console.log('📊 Analytics (local):', { eventType, bookId, userId });
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('analytics_events')
       .insert([
@@ -391,7 +402,8 @@ export async function trackEvent(
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error tracking event:', error);
+    // Silently fail for analytics - don't block user interactions
+    console.debug('Analytics event not tracked (this is OK):', error);
     return null;
   }
 }
@@ -467,20 +479,27 @@ export async function uploadCover(file: File, bookId: string): Promise<string | 
     const fileExt = file.name.split('.').pop();
     const fileName = `${bookId}-${Date.now()}.${fileExt}`;
 
+    console.log('Uploading file:', fileName, 'to bucket: book-covers');
+
     const { error } = await supabase.storage
       .from('book-covers')
       .upload(fileName, file, { upsert: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Upload error details:', error);
+      throw new Error(`Upload failed: ${error.message}`);
+    }
 
     const { data } = supabase.storage
       .from('book-covers')
       .getPublicUrl(fileName);
 
+    console.log('File uploaded successfully:', data.publicUrl);
     return data.publicUrl;
   } catch (error) {
-    console.error('Error uploading cover:', error);
-    return null;
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error during upload';
+    console.error('Error uploading cover:', errorMsg);
+    throw new Error(`Failed to upload cover: ${errorMsg}`);
   }
 }
 
@@ -611,7 +630,10 @@ export async function addBookComment(
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error adding comment details:', error);
+      throw error;
+    }
 
     return {
       id: data.id,
@@ -658,6 +680,39 @@ export async function getBookComments(bookId: string): Promise<BookComment[]> {
   }
 }
 
+export async function getBookCommentsCount(bookId: string): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('book_comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('book_id', bookId)
+      .is('parent_comment_id', null);
+
+    if (error) throw error;
+    return count || 0;
+  } catch (error) {
+    console.error('Error counting comments:', error);
+    return 0;
+  }
+}
+
+export async function getBookCommentLikesTotal(bookId: string): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('book_comments')
+      .select('likes')
+      .eq('book_id', bookId)
+      .is('parent_comment_id', null);
+
+    if (error) throw error;
+    const totalLikes = (data || []).reduce((sum, comment) => sum + (comment.likes || 0), 0);
+    return totalLikes;
+  } catch (error) {
+    console.error('Error counting likes:', error);
+    return 0;
+  }
+}
+
 export async function replyToComment(
   parentCommentId: string,
   author: string,
@@ -666,13 +721,21 @@ export async function replyToComment(
 ): Promise<BookComment | null> {
   try {
     // Get parent comment to get bookId
-    const { data: parentData } = await supabase
+    const { data: parentData, error: selectError } = await supabase
       .from('book_comments')
       .select('book_id')
       .eq('id', parentCommentId)
-      .single();
+      .maybeSingle();
 
-    if (!parentData) return null;
+    if (selectError) {
+      console.error('Error fetching parent comment:', selectError);
+      return null;
+    }
+
+    if (!parentData) {
+      console.error('Parent comment not found');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('book_comments')
@@ -709,28 +772,35 @@ export async function replyToComment(
 export async function likeBook(bookId: string, userId: string = 'visitor'): Promise<boolean> {
   try {
     // Check if like exists
-    const { data: interaction } = await supabase
+    const { data: interaction, error: selectError } = await supabase
       .from('book_interactions')
       .select('*')
       .eq('book_id', bookId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('Error checking like status:', selectError);
+      throw selectError;
+    }
 
     if (interaction && interaction.liked) {
       // Unlike
-      await supabase
+      const { error: updateError } = await supabase
         .from('book_interactions')
         .update({ liked: false })
         .eq('id', interaction.id);
+      if (updateError) throw updateError;
     } else if (interaction) {
       // Like
-      await supabase
+      const { error: updateError } = await supabase
         .from('book_interactions')
         .update({ liked: true, liked_at: new Date().toISOString() })
         .eq('id', interaction.id);
+      if (updateError) throw updateError;
     } else {
       // New like
-      await supabase
+      const { error: insertError } = await supabase
         .from('book_interactions')
         .insert([{
           book_id: bookId,
@@ -738,6 +808,7 @@ export async function likeBook(bookId: string, userId: string = 'visitor'): Prom
           liked: true,
           liked_at: new Date().toISOString(),
         }]);
+      if (insertError) throw insertError;
     }
 
     return true;
@@ -749,6 +820,8 @@ export async function likeBook(bookId: string, userId: string = 'visitor'): Prom
 
 export async function isBookLikedByUser(bookId: string, userId: string = 'visitor'): Promise<boolean> {
   try {
+    if (!hasSupabaseConfig) return false;
+
     const { data, error } = await supabase
       .from('book_interactions')
       .select('liked')
@@ -759,7 +832,7 @@ export async function isBookLikedByUser(bookId: string, userId: string = 'visito
     if (error) return false;
     return data?.liked || false;
   } catch (error) {
-    console.error('Error checking if book is liked:', error);
+    console.debug('Could not check like status (this is OK):', error);
     return false;
   }
 }

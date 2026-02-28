@@ -11,6 +11,7 @@ import {
   isBookLikedByUser,
   BookComment,
 } from '../../../lib/supabaseClient';
+import { trackCommentSubmitted, trackCommentLiked } from '../../../lib/analytics';
 
 interface BookCommentsProps {
   bookId: string;
@@ -23,12 +24,17 @@ export function BookComments({ bookId }: BookCommentsProps) {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(new Set());
 
   // Load comments
   const loadComments = async () => {
-    const loadedComments = await getBookComments(bookId);
-    setComments(loadedComments);
+    try {
+      const loadedComments = await getBookComments(bookId);
+      setComments(loadedComments);
+    } catch (err) {
+      console.error('Failed to load comments:', err);
+    }
   };
 
   useEffect(() => {
@@ -38,9 +44,13 @@ export function BookComments({ bookId }: BookCommentsProps) {
   // Submit new comment
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !authorName.trim()) return;
+    if (!newComment.trim() || !authorName.trim()) {
+      setError('Please fill in all fields');
+      return;
+    }
 
     setIsLoading(true);
+    setError(null);
     const addedComment = await addBookComment(
       bookId,
       authorName,
@@ -51,15 +61,22 @@ export function BookComments({ bookId }: BookCommentsProps) {
       setNewComment('');
       setAuthorName('');
       await loadComments();
+      trackCommentSubmitted(bookId, authorName);
+    } else {
+      setError('Failed to add comment. This feature may need to be enabled in settings.');
     }
     setIsLoading(false);
   };
 
   // Submit reply
   const handleSubmitReply = async (parentCommentId: string) => {
-    if (!replyText.trim() || !authorName.trim()) return;
+    if (!replyText.trim() || !authorName.trim()) {
+      setError('Please fill in all fields');
+      return;
+    }
 
     setIsLoading(true);
+    setError(null);
     const addedReply = await replyToComment(
       parentCommentId,
       authorName,
@@ -70,6 +87,9 @@ export function BookComments({ bookId }: BookCommentsProps) {
       setReplyText('');
       setReplyingTo(null);
       await loadComments();
+      trackCommentSubmitted(bookId, authorName);
+    } else {
+      setError('Failed to add reply. This feature may need to be enabled in settings.');
     }
     setIsLoading(false);
   };
@@ -82,6 +102,7 @@ export function BookComments({ bookId }: BookCommentsProps) {
         updated.delete(commentId);
       } else {
         updated.add(commentId);
+        trackCommentLiked(bookId, commentId);
       }
       return updated;
     });
@@ -186,6 +207,17 @@ export function BookComments({ bookId }: BookCommentsProps) {
       {/* New comment form */}
       <div className="mb-6 pb-6 border-b border-border/30">
         <h3 className="text-lg font-semibold mb-4">Comments ({comments.length})</h3>
+        {error && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start justify-between">
+            <p className="text-sm text-destructive">{error}</p>
+            <button
+              onClick={() => setError(null)}
+              className="text-destructive/50 hover:text-destructive ml-2"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <form onSubmit={handleSubmitComment} className="space-y-3">
           <Input
             placeholder="Your name"
@@ -210,7 +242,7 @@ export function BookComments({ bookId }: BookCommentsProps) {
       </div>
 
       {/* Comments list */}
-      <div>
+      <div className="max-h-96 overflow-y-auto pr-2">
         {comments.length === 0 ? (
           <p className="text-center text-muted-foreground text-sm py-8">
             No comments yet. Be the first to comment!

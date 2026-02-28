@@ -6,7 +6,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { AudioPlayer } from './AudioPlayer';
 import { Book as SupabaseBook, fetchChapters, Chapter } from '../../../lib/supabaseClient';
-import { trackPreviewOpen, trackExternalLink } from '../../../lib/analytics';
+import { trackPreviewOpen } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
 
 interface ChapterPreviewModalProps {
@@ -61,13 +61,6 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
   const firstChapter = chapters[0];
   const defaultContent = `The evening sun painted the sky in shades of amber and rose as the story begins. This is a preview of the chapter. To read the full content, click "Continue on Inkitt" or "Continue on Wattpad" below.`;
   const chapterContent = firstChapter?.preview_text || firstChapter?.content || defaultContent;
-
-  const handleExternalLink = (platform: string, url?: string) => {
-    if (url) {
-      trackExternalLink(platform, book.id, book.title);
-      window.open(url, '_blank');
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -170,27 +163,19 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
 
             {/* Footer */}
             <div className="absolute bottom-0 left-0 right-0 p-6 bg-secondary/50 backdrop-blur-lg border-t border-border">
-              <div className="max-w-3xl mx-auto">
+              <div className="max-w-3xl mx-auto space-y-4">
                 {firstChapter?.audio_url && <AudioPlayer audioUrl={firstChapter.audio_url} />}
-                <div className="flex flex-wrap gap-3 mt-4">
-                  <Button 
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                    onClick={() => handleExternalLink('Inkitt', book.inkitt_url)}
-                    disabled={!book.inkitt_url}
+                {book.book_link && book.book_platform && (
+                  <a
+                    href={book.book_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full"
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Continue on Inkitt
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => handleExternalLink('Wattpad', book.wattpad_url)}
-                    disabled={!book.wattpad_url}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Continue on Wattpad
-                  </Button>
-                </div>
+                    <ExternalLink className="w-4 h-4" />
+                    Read Full Book on {book.book_platform}
+                  </a>
+                )}
               </div>
             </div>
           </motion.div>

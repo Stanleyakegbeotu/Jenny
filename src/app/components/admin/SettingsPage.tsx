@@ -146,24 +146,24 @@ export function SettingsPage() {
     <div className="space-y-6 pb-32">
       {/* Header */}
       <div>
-        <h1 className="text-3xl mb-2 font-playfair">Settings</h1>
-        <p className="text-muted-foreground">Configure your author platform and preferences.</p>
+        <h1 className="text-2xl md:text-3xl mb-2 font-playfair truncate">Settings</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Configure your author platform and preferences.</p>
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 border-b border-border overflow-x-auto pb-0 mb-6">
+      <div className="flex gap-1 border-b border-border overflow-x-auto pb-0 mb-6">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-3 whitespace-nowrap font-medium transition-colors border-b-2 ${
+            className={`px-2 sm:px-4 py-3 whitespace-nowrap font-medium transition-colors border-b-2 text-xs sm:text-sm ${
               activeTab === tab.id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
-            <span className="mr-2">{tab.icon}</span>
-            {tab.label}
+            <span className="mr-1">{tab.icon}</span>
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </div>

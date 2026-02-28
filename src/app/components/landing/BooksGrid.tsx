@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { BookOpen, Volume2 } from 'lucide-react';
+import { BookOpen, Volume2, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { fetchBooks, fetchChapters, Book as SupabaseBook } from '../../../lib/supabaseClient';
@@ -190,28 +190,16 @@ function BookCard({ book, index, onPreviewClick }: { book: SupabaseBook; index: 
             )}
 
             {/* Platform Links - Only show if URLs provided */}
-            <div className="flex gap-2 flex-wrap">
-              {book.inkitt_url && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleExternalLink('Inkitt', book.inkitt_url)}
-                >
-                  Inkitt
-                </Button>
-              )}
-              {book.wattpad_url && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => handleExternalLink('Wattpad', book.wattpad_url)}
-                >
-                  Wattpad
-                </Button>
-              )}
-            </div>
+            {book.book_link && book.book_platform && (
+              <Button
+                className="w-full bg-primary hover:bg-primary/90"
+                size="sm"
+                onClick={() => handleExternalLink(book.book_platform || '', book.book_link)}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Read on {book.book_platform}
+              </Button>
+            )}
           </div>
         </div>
       </motion.div>

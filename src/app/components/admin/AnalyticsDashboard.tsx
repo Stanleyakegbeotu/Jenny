@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '../ui/table';
 import { motion } from 'motion/react';
-import { fetchAnalytics, AnalyticsEvent, fetchBooks, fetchSubscribers } from '../../../lib/supabaseClient';
+import { fetchAnalytics, AnalyticsEvent, fetchBooks, fetchSubscribers, getBookCommentsCount, getBookCommentLikesTotal } from '../../../lib/supabaseClient';
 
 const ITEMS_PER_PAGE = 10;
 const DAYS_PER_PAGE = 7;
@@ -34,6 +34,8 @@ interface BookAnalytics {
   title: string;
   views: number;
   reads: number;
+  comments: number;
+  likes: number;
 }
 
 export function AnalyticsDashboard() {
@@ -118,6 +120,8 @@ export function AnalyticsDashboard() {
           title: book.title,
           views: 0,
           reads: 0,
+          comments: 0,
+          likes: 0,
         });
       });
 
@@ -132,7 +136,22 @@ export function AnalyticsDashboard() {
         }
       });
 
-      const sortedBooks = Array.from(bookMap.values()).sort(
+      // Fetch actual comment and like counts from database for each book
+      const bookAnalyticsWithCounts = await Promise.all(
+        Array.from(bookMap.values()).map(async (analytics) => {
+          const [commentCount, likeCount] = await Promise.all([
+            getBookCommentsCount(analytics.bookId),
+            getBookCommentLikesTotal(analytics.bookId),
+          ]);
+          return {
+            ...analytics,
+            comments: commentCount,
+            likes: likeCount,
+          };
+        })
+      );
+
+      const sortedBooks = bookAnalyticsWithCounts.sort(
         (a, b) => b.views + b.reads - (a.views + a.reads)
       );
       setBookAnalytics(sortedBooks);
@@ -209,8 +228,8 @@ export function AnalyticsDashboard() {
     onPrevious: () => void;
     onNext: () => void;
   }) => (
-    <div className="flex items-center justify-between pt-4 border-t border-border">
-      <span className="text-sm text-muted-foreground">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-4 border-t border-border">
+      <span className="text-xs sm:text-sm text-muted-foreground">
         Page {currentPage + 1} of {totalPages || 1}
       </span>
       <div className="flex gap-2">
@@ -219,6 +238,7 @@ export function AnalyticsDashboard() {
           size="sm"
           onClick={onPrevious}
           disabled={currentPage === 0}
+          className="flex-1 sm:flex-none"
         >
           <ChevronLeft className="w-4 h-4 text-[var(--icon-accent)]" />
         </Button>
@@ -227,6 +247,7 @@ export function AnalyticsDashboard() {
           size="sm"
           onClick={onNext}
           disabled={currentPage >= totalPages - 1}
+          className="flex-1 sm:flex-none"
         >
           <ChevronRight className="w-4 h-4 text-[var(--icon-accent)]" />
         </Button>
@@ -238,8 +259,8 @@ export function AnalyticsDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl mb-2 font-playfair">Analytics Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl md:text-3xl mb-2 font-playfair truncate">Analytics Dashboard</h1>
+        <p className="text-muted-foreground text-sm md:text-base">
           Track landing page visitors, engagement, and platform performance.
         </p>
       </div>
@@ -323,13 +344,13 @@ export function AnalyticsDashboard() {
                   <TableBody>
                     {dailyItems.map((day) => (
                       <TableRow key={day.date}>
-                        <TableCell className="font-medium">
-                          {new Date(day.date).toLocaleDateString()}
+                        <TableCell className="font-medium text-xs md:text-sm">
+                          {new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </TableCell>
-                        <TableCell className="text-right font-semibold">
+                        <TableCell className="text-right font-semibold text-xs md:text-sm">
                           {day.visitors}
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right text-xs md:text-sm">
                           {day.events.length}
                         </TableCell>
                       </TableRow>
@@ -370,8 +391,8 @@ export function AnalyticsDashboard() {
                     <TableBody>
                       {platformItems.map((item, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-medium">{item.platform}</TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="font-medium text-xs md:text-sm">{item.platform}</TableCell>
+                          <TableCell className="text-right font-semibold text-xs md:text-sm">
                             {item.count}
                           </TableCell>
                         </TableRow>
@@ -413,8 +434,8 @@ export function AnalyticsDashboard() {
                     <TableBody>
                       {countryItems.map((item, idx) => (
                         <TableRow key={idx}>
-                          <TableCell className="font-medium">{item.country}</TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="font-medium text-xs md:text-sm">{item.country}</TableCell>
+                          <TableCell className="text-right font-semibold text-xs md:text-sm">
                             {item.count}
                           </TableCell>
                         </TableRow>
@@ -438,7 +459,7 @@ export function AnalyticsDashboard() {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Most Viewed Books */}
-        <Card>
+        <Card className="md:col-span-1 overflow-hidden">
           <CardHeader>
             <CardTitle>Most Viewed Books</CardTitle>
           </CardHeader>
@@ -447,20 +468,28 @@ export function AnalyticsDashboard() {
               <p className="text-muted-foreground text-center py-8">No view data</p>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                <div className="max-h-64 md:max-h-96 overflow-x-auto overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Book</TableHead>
                         <TableHead className="text-right">Views</TableHead>
+                        <TableHead className="text-right">Comments</TableHead>
+                        <TableHead className="text-right">Likes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {viewedItems.map((item) => (
                         <TableRow key={item.bookId}>
-                          <TableCell className="font-medium">{item.title}</TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="font-medium text-xs md:text-sm truncate">{item.title}</TableCell>
+                          <TableCell className="text-right font-semibold text-xs md:text-sm">
                             {item.views}
+                          </TableCell>
+                          <TableCell className="text-right text-xs md:text-sm">
+                            {item.comments}
+                          </TableCell>
+                          <TableCell className="text-right text-xs md:text-sm">
+                            {item.likes}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -481,7 +510,7 @@ export function AnalyticsDashboard() {
         </Card>
 
         {/* Most Read Books */}
-        <Card>
+        <Card className="md:col-span-1 overflow-hidden">
           <CardHeader>
             <CardTitle>Most Read Books</CardTitle>
           </CardHeader>
@@ -490,20 +519,28 @@ export function AnalyticsDashboard() {
               <p className="text-muted-foreground text-center py-8">No read data</p>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                <div className="max-h-64 md:max-h-96 overflow-x-auto overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Book</TableHead>
                         <TableHead className="text-right">Reads</TableHead>
+                        <TableHead className="text-right">Comments</TableHead>
+                        <TableHead className="text-right">Likes</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {readItems.map((item) => (
                         <TableRow key={item.bookId}>
-                          <TableCell className="font-medium">{item.title}</TableCell>
-                          <TableCell className="text-right font-semibold">
+                          <TableCell className="font-medium text-xs md:text-sm truncate">{item.title}</TableCell>
+                          <TableCell className="text-right font-semibold text-xs md:text-sm">
                             {item.reads}
+                          </TableCell>
+                          <TableCell className="text-right text-xs md:text-sm">
+                            {item.comments}
+                          </TableCell>
+                          <TableCell className="text-right text-xs md:text-sm">
+                            {item.likes}
                           </TableCell>
                         </TableRow>
                       ))}

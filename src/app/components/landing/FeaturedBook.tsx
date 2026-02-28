@@ -230,28 +230,18 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                   </Button>
 
                   {/* External Links */}
-                  <div className="grid grid-cols-2 gap-2">
+                  {book.book_link && book.book_platform && (
                     <a
-                      href="https://www.inkitt.com"
+                      href={book.book_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => handleExternalLink('inkitt')}
-                      className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
+                      onClick={() => handleExternalLink(book.book_platform || 'platform')}
+                      className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      Inkitt
+                      Read on {book.book_platform}
                     </a>
-                    <a
-                      href="https://www.wattpad.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => handleExternalLink('wattpad')}
-                      className="flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      Wattpad
-                    </a>
-                  </div>
+                  )}
                 </div>
               </motion.div>
 

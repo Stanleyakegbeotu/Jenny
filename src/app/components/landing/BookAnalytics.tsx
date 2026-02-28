@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, Eye, Mouse, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
-import { likeBook, isBookLikedByUser } from '../../../lib/supabaseClient';
+import { likeBook, isBookLikedByUser, getBookCommentsCount, getBookCommentLikesTotal } from '../../../lib/supabaseClient';
 
 interface BookAnalyticsProps {
   bookId: string;
@@ -22,15 +22,25 @@ export function BookAnalytics({
 }: BookAnalyticsProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
+  const [realCommentCount, setRealCommentCount] = useState(commentCount);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if already liked on mount
-  React.useEffect(() => {
-    const checkLike = async () => {
-      const liked = await isBookLikedByUser(bookId);
-      setIsLiked(liked);
+  // Check if already liked and fetch real comment/like counts on mount
+  useEffect(() => {
+    const checkLikeAndCounts = async () => {
+      try {
+        const [liked, commentCount] = await Promise.all([
+          isBookLikedByUser(bookId),
+          getBookCommentsCount(bookId),
+        ]);
+        setIsLiked(liked);
+        setRealCommentCount(commentCount);
+      } catch (error) {
+        // Silently fail - analytics not critical
+        console.debug('Could not fetch analytics');
+      }
     };
-    checkLike();
+    checkLikeAndCounts();
   }, [bookId]);
 
   const handleLike = async () => {
@@ -71,7 +81,7 @@ export function BookAnalytics({
     {
       icon: MessageCircle,
       label: 'Comments',
-      value: commentCount,
+      value: realCommentCount,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
     },

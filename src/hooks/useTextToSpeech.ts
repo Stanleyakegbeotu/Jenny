@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface UseTextToSpeechOptions {
   rate?: number;
@@ -51,7 +51,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     const loadVoices = () => {
       const availableVoices = synth.getVoices();
       setVoices(availableVoices);
-      if (availableVoices.length > 0 && !selectedVoice) {
+      if (availableVoices.length > 0) {
         setSelectedVoice(availableVoices[0]);
       }
     };
@@ -60,7 +60,19 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
 
     // Some browsers load voices asynchronously
     synth.onvoiceschanged = loadVoices;
-  }, [selectedVoice]);
+  }, []);
+
+  // Initialize on component mount
+  useEffect(() => {
+    initializeSynthesis();
+    
+    // Cleanup on unmount
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.cancel();
+      }
+    };
+  }, [initializeSynthesis]);
 
   const speak = useCallback((text: string, voiceIndex: number = 0) => {
     if (!isSupported || !synthRef.current) {
