@@ -68,6 +68,7 @@ export interface Subscriber {
   country?: string;
   subscribed_at: string;
   unsubscribed_at?: string;
+  is_active?: boolean; // Derived: true if unsubscribed_at is null
 }
 
 export interface ContactMessage {
@@ -266,16 +267,18 @@ export async function saveSubscriber(email: string, country?: string): Promise<S
       .single();
 
     if (existing) {
+      console.log('📧 Subscriber already exists:', email);
       return existing;
     }
 
     const { data, error } = await supabase
       .from('subscribers')
-      .insert([{ email, country: country || null, subscribed_at: new Date().toISOString() }])
+      .insert([{ email, country: country || null }])
       .select()
       .single();
 
     if (error) throw error;
+    
     return data;
   } catch (error) {
     console.error('Error saving subscriber:', error);
@@ -291,7 +294,12 @@ export async function fetchSubscribers(): Promise<Subscriber[]> {
       .order('subscribed_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Add is_active derived property
+    return (data || []).map(sub => ({
+      ...sub,
+      is_active: !sub.unsubscribed_at,
+    }));
   } catch (error) {
     console.error('Error fetching subscribers:', error);
     return [];
@@ -302,10 +310,11 @@ export async function unsubscribeEmail(email: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('subscribers')
-      .update({ is_active: false })
+      .update({ unsubscribed_at: new Date().toISOString() })
       .eq('email', email);
 
     if (error) throw error;
+    
     return true;
   } catch (error) {
     console.error('Error unsubscribing:', error);
@@ -327,15 +336,19 @@ export async function saveContactMessage(
           name,
           email,
           message,
-          sent_at: new Date().toISOString(),
-          read: false,
         },
       ])
-      .select()
+      .select('id, name, email, message, created_at')
       .single();
 
     if (error) throw error;
-    return data;
+    
+    // Map created_at to sent_at for interface compatibility
+    return {
+      ...data,
+      sent_at: data.created_at,
+      read: false,
+    } as unknown as ContactMessage;
   } catch (error) {
     console.error('Error saving contact message:', error);
     return null;
@@ -346,11 +359,22 @@ export async function fetchContactMessages(): Promise<ContactMessage[]> {
   try {
     const { data, error } = await supabase
       .from('contact_messages')
-      .select('*')
-      .order('sent_at', { ascending: false });
+      .select('id, name, email, message, created_at')
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    // Map created_at to sent_at for interface compatibility
+    return ((data || []) as any[]).map(msg => {
+      const message: ContactMessage = {
+        id: msg.id,
+        name: msg.name,
+        email: msg.email,
+        message: msg.message,
+        sent_at: msg.created_at,
+        read: false,
+      };
+      return message;
+    });
   } catch (error) {
     console.error('Error fetching contact messages:', error);
     return [];
@@ -386,20 +410,27 @@ export async function trackEvent(
       return null;
     }
 
+    console.log('📡 Tracking event to database:', { eventType, userId, bookId, metadata });
+
+    const eventRecord = {
+      event_type: eventType,
+      user_id: userId || 'anonymous',
+      book_id: bookId || null,
+      metadata: metadata || {},
+      timestamp: new Date().toISOString(),
+    };
+
     const { data, error } = await supabase
       .from('analytics_events')
-      .insert([
-        {
-          event_type: eventType,
-          user_identifier: userId,
-          book_id: bookId,
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      .insert([eventRecord])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error tracking event:', { error, eventRecord });
+      throw error;
+    }
+    console.log('✅ Event tracked successfully:', { id: data?.id, eventType });
     return data;
   } catch (error) {
     // Silently fail for analytics - don't block user interactions
@@ -421,10 +452,24 @@ export async function fetchAnalytics(startDate?: string, endDate?: string): Prom
 
     const { data, error } = await query.order('timestamp', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error fetching analytics:', error);
+      return [];
+    }
+    
+    console.log('✅ Fetched analytics events:', {
+      total: data?.length || 0,
+      startDate,
+      endDate,
+      eventTypes: data?.reduce((acc: any, e) => {
+        acc[e.event_type] = (acc[e.event_type] || 0) + 1;
+        return acc;
+      }, {}),
+    });
+    
     return data || [];
   } catch (error) {
-    console.error('Error fetching analytics:', error);
+    console.error('Exception fetching analytics:', error);
     return [];
   }
 }
@@ -595,16 +640,13 @@ export async function sendBulkEmail(
   }
 }
 
-export async function sendWelcomeEmail(email: string, name?: string): Promise<boolean> {
+export async function sendWelcomeEmail(email: string, country?: string): Promise<boolean> {
   try {
     console.log('📧 Sending welcome email to:', email);
-
-    // TODO: Implement welcome email logic with email service integration
-    // This could include personalized content, book recommendations, etc.
-
+    // This is now just a wrapper - actual sending is done via email service in saveSubscriber
     return true;
   } catch (error) {
-    console.error('Error sending welcome email:', error);
+    console.error('Error in sendWelcomeEmail wrapper:', error);
     return false;
   }
 }
@@ -828,7 +870,6 @@ export async function isBookLikedByUser(bookId: string, userId: string = 'visito
       return false;
     }
 
-    console.log('🔍 Checking if book liked by user:', { bookId, userId });
     // Check if user has liked this book
     const { data, error } = await supabase
       .from('book_interactions')
@@ -843,7 +884,6 @@ export async function isBookLikedByUser(bookId: string, userId: string = 'visito
       return false;
     }
 
-    console.log('📍 Like status result:', !!data);
     return !!data;
   } catch (error) {
     console.error('❌ Exception checking like status:', error);
@@ -853,7 +893,6 @@ export async function isBookLikedByUser(bookId: string, userId: string = 'visito
 
 export async function trackBookClick(bookId: string): Promise<boolean> {
   try {
-    console.log('📊 [trackBookClick] Starting:', bookId);
     const { data, error } = await supabase
       .from('book_interactions')
       .insert([{
@@ -945,22 +984,28 @@ export async function likeComment(commentId: string): Promise<boolean> {
   }
 }
 
-export async function deleteSubscriber(subscriberId: string): Promise<boolean> {
+export async function deleteSubscriber(subscriberId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase
+    console.log('🗑️ Attempting to delete subscriber:', subscriberId);
+    
+    const { error, data } = await supabase
       .from('subscribers')
       .delete()
-      .eq('id', subscriberId);
+      .eq('id', subscriberId)
+      .select();
 
     if (error) {
-      console.error('Error deleting subscriber:', error);
-      return false;
+      console.error('❌ Error deleting subscriber:', error);
+      console.error('Error details:', { code: error.code, message: error.message, details: error.details });
+      return { success: false, error: error.message || 'Failed to delete subscriber' };
     }
 
-    return true;
+    console.log('✅ Subscriber deleted successfully:', data);
+    return { success: true };
   } catch (error) {
-    console.error('Error deleting subscriber:', error);
-    return false;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Error deleting subscriber:', error);
+    return { success: false, error: errorMessage };
   }
 }
 

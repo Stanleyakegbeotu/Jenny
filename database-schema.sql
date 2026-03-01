@@ -51,6 +51,7 @@ CREATE INDEX chapters_order_idx ON chapters(book_id, order);
 CREATE TABLE subscribers (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   email text NOT NULL UNIQUE,
+  country text,
   subscribed_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   unsubscribed_at timestamp with time zone,
   preferences jsonb DEFAULT '{"language": "en", "frequency": "weekly"}'::jsonb,
@@ -59,6 +60,7 @@ CREATE TABLE subscribers (
 
 -- Create index on email and unsubscribed_at for efficient queries
 CREATE INDEX subscribers_email_idx ON subscribers(email);
+CREATE INDEX subscribers_country_idx ON subscribers(country);
 CREATE INDEX subscribers_unsubscribed_at_idx ON subscribers(unsubscribed_at);
 
 -- ============================================================================
@@ -170,6 +172,10 @@ CREATE POLICY "Users can update their subscription"
   ON subscribers FOR UPDATE
   USING (true);
 
+CREATE POLICY "Authenticated users can delete subscribers"
+  ON subscribers FOR DELETE
+  USING (true);
+
 -- Contact messages table - Public create, authenticated read/update
 ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 
@@ -185,14 +191,14 @@ CREATE POLICY "Authenticated users can update contact messages"
   ON contact_messages FOR UPDATE
   USING (true);
 
--- Analytics events table - Public insert, authenticated read
+-- Analytics events table - Public insert, public read
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public insert on analytics_events"
   ON analytics_events FOR INSERT
   WITH CHECK (true);
 
-CREATE POLICY "Authenticated users can read analytics"
+CREATE POLICY "Allow public read on analytics_events"
   ON analytics_events FOR SELECT
   USING (true);
 

@@ -17,9 +17,15 @@ interface ActivityItem {
   action: string;
   detail: string;
   time: string;
+  type: 'book_read' | 'subscriber' | 'like' | 'click';
+  page: 'analytics' | 'subscribers' | 'books';
 }
 
-export function DashboardOverview() {
+interface DashboardOverviewProps {
+  onNavigateTo?: (page: string) => void;
+}
+
+export function DashboardOverview({ onNavigateTo }: DashboardOverviewProps) {
   const [stats, setStats] = useState<StatItem[]>([]);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,22 +92,26 @@ export function DashboardOverview() {
               action: 'Book read',
               detail: `${book.title} - ${book.totalReads} total reads`,
               time: 'Recently',
+              type: 'book_read',
+              page: 'analytics',
             });
           });
 
         // Add recent subscribers
         subscribers
-          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .sort((a, b) => new Date(b.subscribed_at).getTime() - new Date(a.subscribed_at).getTime())
           .slice(0, 2)
           .forEach(subscriber => {
             const daysAgo = Math.floor(
-              (Date.now() - new Date(subscriber.created_at).getTime()) / (1000 * 60 * 60 * 24)
+              (Date.now() - new Date(subscriber.subscribed_at).getTime()) / (1000 * 60 * 60 * 24)
             );
             const timeAgo = daysAgo === 0 ? 'Today' : `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
             activities.push({
               action: 'New subscriber',
               detail: subscriber.email,
               time: timeAgo,
+              type: 'subscriber',
+              page: 'subscribers',
             });
           });
 
@@ -202,23 +212,29 @@ export function DashboardOverview() {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="max-h-80 overflow-y-auto pr-2 space-y-0">
             {recentActivity.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">No recent activity</p>
+              <p className="text-center text-muted-foreground py-8">No recent activity</p>
             ) : (
               recentActivity.map((activity, index) => (
-                <div
+                <button
                   key={index}
-                  className="flex flex-col md:flex-row md:items-start md:justify-between py-3 px-2 md:px-0 border-b border-border last:border-0 gap-2"
+                  onClick={() => onNavigateTo?.(activity.page)}
+                  className="w-full flex flex-col md:flex-row md:items-start md:justify-between py-3 px-3 md:px-2 border-b border-border last:border-0 gap-2 rounded-lg hover:bg-accent/50 transition-all duration-200 cursor-pointer text-left group"
+                  title={`Go to ${activity.page} page`}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground text-sm md:text-base">{activity.action}</div>
-                    <div className="text-xs md:text-sm text-muted-foreground break-words line-clamp-2">{activity.detail}</div>
+                    <div className="font-medium text-foreground text-sm md:text-base group-hover:text-primary transition-colors">
+                      {activity.action}
+                    </div>
+                    <div className="text-xs md:text-sm text-muted-foreground break-words line-clamp-2">
+                      {activity.detail}
+                    </div>
                   </div>
                   <div className="text-xs md:text-sm text-muted-foreground flex-shrink-0 md:whitespace-nowrap">
                     {activity.time}
                   </div>
-                </div>
+                </button>
               ))
             )}
           </div>

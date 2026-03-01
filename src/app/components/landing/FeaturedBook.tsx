@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, Eye, BookOpen, MessageCircle, Users, Volume2, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Users, Volume2, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { BookAnalytics } from './BookAnalytics';
@@ -78,11 +78,8 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
     }
   };
 
-  const handleExternalLink = (platform: string, url?: string) => {
-    if (url) {
-      trackExternalLink(platform, books[0].id, books[0].title);
-      window.open(url, '_blank');
-    }
+  const handleExternalLink = (platform: string, bookId: string, bookTitle: string) => {
+    trackExternalLink(platform, bookId, bookTitle);
   };
 
   const handleSpeakDescription = (bookId: string, description: string) => {
@@ -210,24 +207,9 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                       clicks={book.clicks}
                       likes={book.likes}
                       commentCount={book.commentCount}
+                      onCommentsToggle={() => toggleComments(book.id)}
                     />
                   </div>
-
-                  {/* Toggle Comments Section */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full mb-3 gap-2"
-                    onClick={() => toggleComments(book.id)}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    {isCommentsExpanded ? 'Hide' : 'View'} Comments
-                    {isCommentsExpanded ? (
-                      <ChevronUp className="w-4 h-4 ml-auto" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 ml-auto" />
-                    )}
-                  </Button>
 
                   {/* External Links */}
                   {book.book_link && book.book_platform && (
@@ -235,7 +217,7 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                       href={book.book_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={() => handleExternalLink(book.book_platform || 'platform')}
+                      onClick={() => handleExternalLink(book.book_platform || 'platform', book.id, book.title)}
                       className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full"
                     >
                       <ExternalLink className="w-4 h-4" />

@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import {
   getBookComments,
   addBookComment,
-  replyToComment,
-  likeBook,
-  isBookLikedByUser,
   BookComment,
 } from '../../../lib/supabaseClient';
-import { trackCommentSubmitted, trackCommentLiked } from '../../../lib/analytics';
+import { trackCommentSubmitted } from '../../../lib/analytics';
 
 interface BookCommentsProps {
   bookId: string;
@@ -21,11 +17,8 @@ export function BookComments({ bookId }: BookCommentsProps) {
   const [comments, setComments] = useState<BookComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [authorName, setAuthorName] = useState('');
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(new Set());
 
   // Load comments
   const loadComments = async () => {
@@ -68,54 +61,13 @@ export function BookComments({ bookId }: BookCommentsProps) {
     setIsLoading(false);
   };
 
-  // Submit reply
-  const handleSubmitReply = async (parentCommentId: string) => {
-    if (!replyText.trim() || !authorName.trim()) {
-      setError('Please fill in all fields');
-      return;
-    }
 
-    setIsLoading(true);
-    setError(null);
-    const addedReply = await replyToComment(
-      parentCommentId,
-      authorName,
-      replyText
-    );
 
-    if (addedReply) {
-      setReplyText('');
-      setReplyingTo(null);
-      await loadComments();
-      trackCommentSubmitted(bookId, authorName);
-    } else {
-      setError('Failed to add reply. This feature may need to be enabled in settings.');
-    }
-    setIsLoading(false);
-  };
-
-  // Toggle like on comment
-  const handleLikeComment = (commentId: string) => {
-    setLikedCommentIds(prev => {
-      const updated = new Set(prev);
-      if (updated.has(commentId)) {
-        updated.delete(commentId);
-      } else {
-        updated.add(commentId);
-        trackCommentLiked(bookId, commentId);
-      }
-      return updated;
-    });
-  };
-
-  // Recursive comment renderer
-  const renderComment = (comment: BookComment, depth = 0) => {
-    const isLiked = likedCommentIds.has(comment.id);
-    const indentClass = depth > 0 ? 'ml-6 border-l-2 border-border pl-4' : '';
-
+  // Render comment
+  const renderComment = (comment: BookComment) => {
     return (
-      <div key={comment.id} className={`mb-4 ${indentClass}`}>
-        <div className="bg-muted/50 rounded-lg p-4 mb-3">
+      <div key={comment.id} className="mb-4">
+        <div className="bg-muted/50 rounded-lg p-4">
           <div className="flex items-start justify-between mb-2">
             <div>
               <p className="font-semibold text-sm">
@@ -132,72 +84,12 @@ export function BookComments({ bookId }: BookCommentsProps) {
             </div>
           </div>
           <p className="text-sm mb-3">{comment.content}</p>
-          <div className="flex gap-3">
-            <Button
-              variant={isLiked ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => handleLikeComment(comment.id)}
-              className="text-xs gap-1 h-8"
-            >
-              <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-              <span>{comment.likes + (isLiked ? 1 : 0)}</span>
-            </Button>
-            {depth < 2 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                className="text-xs gap-1 h-8"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Reply
-              </Button>
-            )}
-          </div>
+          {comment.likes > 0 && (
+            <div className="text-xs text-muted-foreground">
+              👍 {comment.likes} {comment.likes === 1 ? 'like' : 'likes'}
+            </div>
+          )}
         </div>
-
-        {/* Reply form */}
-        {replyingTo === comment.id && (
-          <div className="bg-muted/30 rounded-lg p-3 mb-4">
-            <div className="flex gap-2 mb-2">
-              <Input
-                placeholder="Your name"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
-                className="text-sm"
-              />
-            </div>
-            <Textarea
-              placeholder="Write a reply..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              className="text-sm mb-2 resize-none h-20"
-            />
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => handleSubmitReply(comment.id)}
-                disabled={isLoading || !replyText.trim() || !authorName.trim()}
-              >
-                Post Reply
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setReplyingTo(null)}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Render replies */}
-        {comment.replies.length > 0 && (
-          <div className="mt-4">
-            {comment.replies.map((reply: BookComment) => renderComment(reply, depth + 1))}
-          </div>
-        )}
       </div>
     );
   };

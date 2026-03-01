@@ -21,6 +21,7 @@ export function AdminDashboard() {
   const { theme, toggleTheme } = useTheme();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { badgeCount, incrementBadge, clearBadge } = useAppBadge();
+  const [lastActivityPage, setLastActivityPage] = useState<string>('analytics');
 
   // Handle mobile responsiveness
   useEffect(() => {
@@ -98,7 +99,14 @@ export function AdminDashboard() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardOverview />;
+        return (
+          <DashboardOverview 
+            onNavigateTo={(page) => {
+              setLastActivityPage(page);
+              handlePageChange(page);
+            }} 
+          />
+        );
       case 'books':
         return <BooksManagement />;
       case 'analytics':
@@ -108,7 +116,14 @@ export function AdminDashboard() {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <DashboardOverview />;
+        return (
+          <DashboardOverview 
+            onNavigateTo={(page) => {
+              setLastActivityPage(page);
+              handlePageChange(page);
+            }} 
+          />
+        );
     }
   };
 
@@ -164,8 +179,17 @@ export function AdminDashboard() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={clearBadge}
+                    onClick={() => {
+                      // Navigate to the page where the activity occurred
+                      if (lastActivityPage === 'dashboard') {
+                        navigate('/admin');
+                      } else {
+                        navigate(`/admin/${lastActivityPage}`);
+                      }
+                      clearBadge();
+                    }}
                     className="gap-2"
+                    title="Go to recent activity"
                   >
                     <Bell className="w-4 h-4" />
                     <span className="text-xs font-semibold">{badgeCount}</span>

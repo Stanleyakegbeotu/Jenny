@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Send, Briefcase, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -7,6 +7,7 @@ import { Textarea } from '../ui/textarea';
 import { useI18n } from '../../../hooks/useI18n';
 import { saveContactMessage } from '../../../lib/supabaseClient';
 import { trackContactSubmit } from '../../../lib/analytics';
+import { getFormspreeUrl } from '../../../lib/siteSettings';
 
 export function ContactSection() {
   const { t } = useI18n();
@@ -17,6 +18,24 @@ export function ContactSection() {
   });
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [formspreeUrl, setFormspreeUrl] = useState<string | null>(null);
+
+  // Load Formspree URL on component mount
+  useEffect(() => {
+    const loadFormspreeUrl = async () => {
+      try {
+        const url = await getFormspreeUrl();
+        setFormspreeUrl(url);
+        if (!url) {
+          console.warn('Formspree URL not configured in site settings');
+        }
+      } catch (err) {
+        console.error('Error loading Formspree URL:', err);
+      }
+    };
+
+    loadFormspreeUrl();
+  }, []);
 
   const validateForm = (): boolean => {
     if (!formData.name || !formData.email || !formData.message) {
@@ -42,17 +61,42 @@ export function ContactSection() {
       return;
     }
 
+    if (!formspreeUrl) {
+      setErrorMessage(t('contact.error'));
+      setState('error');
+      setTimeout(() => setState('idle'), 3000);
+      console.error('Formspree URL not configured');
+      return;
+    }
+
     setState('loading');
     trackContactSubmit(formData.email);
 
     try {
-      const result = await saveContactMessage(
+      // Save to Supabase for admin records
+      const saveToDb = saveContactMessage(
         formData.name,
         formData.email,
         formData.message
       );
 
-      if (result) {
+      // Submit to Formspree
+      const submitToFormspree = fetch(formspreeUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+        }),
+      });
+
+      // Wait for both to complete
+      const [dbResult] = await Promise.all([saveToDb, submitToFormspree]);
+
+      if (dbResult) {
         setState('success');
         setFormData({ name: '', email: '', message: '' });
         setErrorMessage('');

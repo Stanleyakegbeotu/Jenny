@@ -143,15 +143,22 @@ export function SubscribersManagement() {
     if (!subscriberToDelete) return;
 
     setIsDeleting(true);
+    setSendError(null);
     try {
-      const success = await deleteSubscriber(subscriberToDelete.id);
-      if (success) {
+      const result = await deleteSubscriber(subscriberToDelete.id);
+      if (result.success) {
         setSubscribers(prev => prev.filter(sub => sub.id !== subscriberToDelete.id));
         setIsDeleteModalOpen(false);
         setSubscriberToDelete(null);
+        setSendSuccess(true);
+        setTimeout(() => setSendSuccess(false), 2000);
+      } else {
+        setSendError(result.error || 'Failed to delete subscriber. Please check console logs.');
+        console.error('Delete failed with error:', result.error);
       }
     } catch (error) {
       console.error('Error deleting subscriber:', error);
+      setSendError('Failed to delete subscriber. An unexpected error occurred.');
     } finally {
       setIsDeleting(false);
     }
@@ -357,12 +364,25 @@ export function SubscribersManagement() {
             </DialogDescription>
           </DialogHeader>
 
+          {sendError && (
+            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <p className="text-sm text-destructive">{sendError}</p>
+            </div>
+          )}
+
+          {sendSuccess && (
+            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <p className="text-sm text-green-600">Subscriber deleted successfully!</p>
+            </div>
+          )}
+
           <div className="flex gap-3 justify-end pt-4">
             <Button
               variant="outline"
               onClick={() => {
                 setIsDeleteModalOpen(false);
                 setSubscriberToDelete(null);
+                setSendError(null);
               }}
               disabled={isDeleting}
             >

@@ -1,10 +1,19 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Save, AlertCircle, CheckCircle, Eye, EyeOff, Trash2, Plus } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Eye, EyeOff, Trash2, Plus, Loader } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { AdminSettings } from './AdminSettings';
+import {
+  getAuthorSettings as getAuthorSettingsFromDB,
+  updateAuthorSettings as updateAuthorSettingsInDB,
+  getNotificationSettings as getNotificationSettingsFromDB,
+  updateNotificationSettings as updateNotificationSettingsInDB,
+  AuthorSettings as DBAuthorSettings,
+  NotificationSettings as DBNotificationSettings,
+} from '../../../lib/siteSettings';
 
 interface Review {
   id: string;
@@ -47,17 +56,9 @@ interface NotificationSettings {
   notifyBookViews: boolean;
 }
 
-interface EmailSettings {
-  smtpHost: string;
-  smtpPort: string;
-  smtpEmail: string;
-  smtpPassword: string;
-  sendWelcomeEmail: boolean;
-}
-
 export function SettingsPage() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [activeTab, setActiveTab] = useState<'author' | 'reviews' | 'hero' | 'site' | 'email' | 'notifications'>('author');
+  const [activeTab, setActiveTab] = useState<'author' | 'reviews' | 'hero' | 'site' | 'notifications' | 'formspree'>('author');
   const [showPassword, setShowPassword] = useState(false);
 
   // Author Settings
@@ -83,15 +84,6 @@ export function SettingsPage() {
     platformLinks: [],
   });
 
-  // Email Settings
-  const [emailSettings, setEmailSettings] = useState<EmailSettings>({
-    smtpHost: '',
-    smtpPort: '',
-    smtpEmail: '',
-    smtpPassword: '',
-    sendWelcomeEmail: true,
-  });
-
   // Notification Settings
   const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
     notifyNewSubscribers: true,
@@ -99,35 +91,64 @@ export function SettingsPage() {
     notifyBookViews: false,
   });
 
-  // Load settings from localStorage
+  // Load settings from Supabase
   useEffect(() => {
-    const saved = {
-      author: localStorage.getItem('authorSettings'),
-      site: localStorage.getItem('siteSettings'),
-      email: localStorage.getItem('emailSettings'),
-      notifications: localStorage.getItem('notificationSettings'),
+    const loadSettings = async () => {
+      try {
+        const [author, notifications] = await Promise.all([
+          getAuthorSettingsFromDB(),
+          getNotificationSettingsFromDB(),
+        ]);
+
+        if (author) {
+          setAuthorSettings({
+            name: author.name || '',
+            bio: author.bio || '',
+            email: author.email || '',
+            profileImage: author.profileImage,
+            totalReads: author.totalReads || 0,
+            booksPublished: author.booksPublished || 0,
+            followers: author.followers || 0,
+            instagramUrl: author.instagramUrl,
+            twitterUrl: author.twitterUrl,
+            linkedinUrl: author.linkedinUrl,
+            reviews: [],
+          });
+        }
+
+        if (notifications) {
+          setNotificationSettings({
+            notifyNewSubscribers: notifications.notifyNewSubscribers,
+            notifyContactForm: notifications.notifyContactForm,
+            notifyBookViews: notifications.notifyBookViews,
+          });
+        }
+      } catch (err) {
+        console.error('Error loading settings from Supabase:', err);
+      }
     };
 
-    if (saved.author) setAuthorSettings(JSON.parse(saved.author));
-    if (saved.site) setSiteSettings(JSON.parse(saved.site));
-    if (saved.email) setEmailSettings(JSON.parse(saved.email));
-    if (saved.notifications) setNotificationSettings(JSON.parse(saved.notifications));
+    loadSettings();
   }, []);
 
   const handleSaveSettings = async () => {
     setSaveState('saving');
     try {
-      // Save to localStorage
-      localStorage.setItem('authorSettings', JSON.stringify(authorSettings));
-      localStorage.setItem('siteSettings', JSON.stringify(siteSettings));
-      localStorage.setItem('emailSettings', JSON.stringify(emailSettings));
-      localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
+      // Save author and notification settings to Supabase
+      const authorResult = await updateAuthorSettingsInDB(authorSettings as unknown as DBAuthorSettings);
+      const notificationResult = await updateNotificationSettingsInDB(
+        notificationSettings as unknown as DBNotificationSettings
+      );
 
-      console.log('Settings saved successfully');
-      setSaveState('success');
-      setTimeout(() => setSaveState('idle'), 3000);
+      if (authorResult && notificationResult) {
+        console.log('✅ Settings saved to Supabase successfully');
+        setSaveState('success');
+        setTimeout(() => setSaveState('idle'), 3000);
+      } else {
+        throw new Error('Failed to save one or more settings');
+      }
     } catch (err) {
-      console.error('Error saving settings:', err);
+      console.error('❌ Error saving settings:', err);
       setSaveState('error');
       setTimeout(() => setSaveState('idle'), 3000);
     }
@@ -138,8 +159,8 @@ export function SettingsPage() {
     { id: 'reviews', label: 'Reader Reviews', icon: '⭐' },
     { id: 'hero', label: 'Hero & Platforms', icon: '🚀' },
     { id: 'site', label: 'Site Settings', icon: '🌐' },
-    { id: 'email', label: 'Email Configuration', icon: '📧' },
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
+    { id: 'formspree', label: 'Contact Form', icon: '📮' },
   ];
 
   return (
@@ -151,7 +172,7 @@ export function SettingsPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 border-b border-border overflow-x-auto pb-0 mb-6">
+      <div className="flex gap-1 border-b border-border overflow-x-auto pb-0 mb-6 justify-center">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -574,96 +595,6 @@ export function SettingsPage() {
       )}
 
       {/* Email Configuration */}
-      {activeTab === 'email' && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-6"
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle>Email Server Configuration</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium mb-2">SMTP Host</label>
-                  <Input
-                    value={emailSettings.smtpHost}
-                    onChange={(e) => setEmailSettings({ ...emailSettings, smtpHost: e.target.value })}
-                    placeholder="smtp.gmail.com"
-                    className="bg-background/50"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">e.g., smtp.gmail.com or mail.yourdomain.com</p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2">SMTP Port</label>
-                  <Input
-                    value={emailSettings.smtpPort}
-                    onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: e.target.value })}
-                    placeholder="587"
-                    className="bg-background/50"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Usually 587 (TLS) or 465 (SSL)</p>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">SMTP Email Address</label>
-                <Input
-                  type="email"
-                  value={emailSettings.smtpEmail}
-                  onChange={(e) => setEmailSettings({ ...emailSettings, smtpEmail: e.target.value })}
-                  placeholder="your-email@gmail.com"
-                  className="bg-background/50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">SMTP Password</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={emailSettings.smtpPassword}
-                    onChange={(e) => setEmailSettings({ ...emailSettings, smtpPassword: e.target.value })}
-                    placeholder="••••••••••••"
-                    className="w-full px-3 py-2 bg-background/50 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">For Gmail: Use an App Password, not your regular password</p>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 bg-accent/10 rounded-lg border border-accent/20">
-                <input
-                  type="checkbox"
-                  id="send-welcome"
-                  checked={emailSettings.sendWelcomeEmail}
-                  onChange={(e) => setEmailSettings({ ...emailSettings, sendWelcomeEmail: e.target.checked })}
-                  className="rounded"
-                />
-                <label htmlFor="send-welcome" className="text-sm font-medium cursor-pointer flex-1">
-                  Send Welcome Email to New Subscribers
-                </label>
-              </div>
-
-              <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <p className="text-xs text-blue-600/80">
-                  💡 Keep these credentials secure. They are needed to send emails from your site.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
       {/* Notification Settings */}
       {activeTab === 'notifications' && (
         <motion.div
@@ -725,6 +656,17 @@ export function SettingsPage() {
               </div>
             </CardContent>
           </Card>
+        </motion.div>
+      )}
+
+      {/* Formspree Contact Form Settings */}
+      {activeTab === 'formspree' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <AdminSettings />
         </motion.div>
       )}
 

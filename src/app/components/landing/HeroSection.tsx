@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../../hooks/useI18n';
+import { trackExternalLink } from '../../../lib/analytics';
 
 interface PlatformLink {
   name: string;
@@ -94,8 +95,10 @@ export function HeroSection() {
     }
   }, []);
 
-  const handlePlatformLink = (url?: string) => {
+  const handlePlatformLink = (platform: string, url?: string) => {
     if (url) {
+      // Track external link click (no book ID for hero section links)
+      trackExternalLink(platform);
       window.open(url, '_blank');
     }
   };
@@ -183,7 +186,7 @@ export function HeroSection() {
                       <button
                         key={index}
                         onClick={() => {
-                          handlePlatformLink(platform.url);
+                          handlePlatformLink(platform.name, platform.url);
                           setShowPlatforms(false);
                         }}
                         className="w-full flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md hover:bg-secondary transition-colors text-left"

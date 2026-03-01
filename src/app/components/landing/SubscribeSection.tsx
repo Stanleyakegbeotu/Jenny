@@ -1,15 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Mail, Globe, Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Globe, Sparkles, AlertCircle, CheckCircle, Search, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../ui/select';
 import { useI18n } from '../../../hooks/useI18n';
 import { saveSubscriber } from '../../../lib/supabaseClient';
 import { trackSubscribeAttempt, trackSubscribeSuccess } from '../../../lib/analytics';
@@ -45,8 +38,28 @@ export function SubscribeSection() {
   const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('');
+  const [countrySearch, setCountrySearch] = useState('');
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
   const [state, setState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Filter countries based on search input
+  const filteredCountries = COUNTRIES.filter((c) =>
+    c.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
+        setIsCountryDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const validateEmail = (email: string): boolean => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,6 +88,7 @@ export function SubscribeSection() {
     }
 
     setState('loading');
+    setIsCountryDropdownOpen(false);
     trackSubscribeAttempt(email);
 
     try {
@@ -85,12 +99,13 @@ export function SubscribeSection() {
         trackSubscribeSuccess(email);
         setEmail('');
         setCountry('');
+        setCountrySearch('');
         setErrorMessage('');
 
-        // Reset after 3 seconds
+        // Reset after 4 seconds (longer to show the enhanced success message)
         setTimeout(() => {
           setState('idle');
-        }, 3000);
+        }, 4000);
       } else {
         setErrorMessage(t('subscribe.error'));
         setState('error');
@@ -136,24 +151,91 @@ export function SubscribeSection() {
           </div>
 
           <form onSubmit={handleSubscribe} className="max-w-md mx-auto">
-            {/* Country Selection */}
-            <div className="mb-4">
+            {/* Country Selection with Search */}
+            <div className="mb-4" ref={countryDropdownRef}>
               <div className="flex items-center gap-2 mb-2">
                 <Globe className="w-5 h-5 text-[var(--icon-info)]" />
                 <label className="text-sm font-medium">{t('subscribe.country')} *</label>
               </div>
-              <Select value={country} onValueChange={setCountry} disabled={state === 'loading'}>
-                <SelectTrigger className="h-12 bg-background/50 border border-border/50 rounded-lg shadow-md">
-                  <SelectValue placeholder={t('subscribe.selectCountry')} />
-                </SelectTrigger>
-                <SelectContent className="max-h-48">
-                  {COUNTRIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCountryDropdownOpen(!isCountryDropdownOpen);
+                    setCountrySearch('');
+                  }}
+                  disabled={state === 'loading'}
+                  className="w-full h-12 bg-background/50 border border-border/50 rounded-lg shadow-md px-3 py-2 text-left flex items-center justify-between hover:bg-background/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className={country ? 'text-foreground' : 'text-muted-foreground'}>
+                    {country || t('subscribe.selectCountry')}
+                  </span>
+                  {country && (
+                    <X
+                      className="w-4 h-4 text-muted-foreground cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCountry('');
+                        setCountrySearch('');
+                      }}
+                    />
+                  )}
+                </button>
+
+                {isCountryDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute z-50 top-full left-0 right-0 mt-2 bg-card border border-primary/30 rounded-lg shadow-2xl overflow-hidden"
+                  >
+                    {/* Search input */}
+                    <div className="p-3 border-b border-primary/20 bg-background/80">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-primary/60" />
+                        <input
+                          type="text"
+                          placeholder="🔍 Search countries..."
+                          value={countrySearch}
+                          onChange={(e) => setCountrySearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 bg-background border border-primary/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent placeholder:text-muted-foreground"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    {/* Countries list */}
+                    <div className="max-h-56 overflow-y-auto">
+                      {filteredCountries.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-muted-foreground">
+                          No countries found matching "{countrySearch}"
+                        </div>
+                      ) : (
+                        <div className="space-y-0.5 p-1">
+                          {filteredCountries.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => {
+                                setCountry(c);
+                                setIsCountryDropdownOpen(false);
+                                setCountrySearch('');
+                              }}
+                              className={`w-full px-3 py-2.5 text-left text-sm rounded transition-all ${
+                                country === c 
+                                  ? 'bg-primary/20 font-semibold text-primary border-l-2 border-primary' 
+                                  : 'hover:bg-primary/10'
+                              }`}
+                            >
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
             </div>
 
             {/* Email Input */}
@@ -201,18 +283,39 @@ export function SubscribeSection() {
             {/* Success Message */}
             {state === 'success' && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-2 mt-3 p-3 bg-green-500/10 rounded-lg border border-green-500/20"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="mt-4 p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/30 shadow-lg"
               >
-                <CheckCircle className="w-4 h-4 text-[var(--icon-success)]" />
-                <p className="text-sm text-green-500">{t('subscribe.success')}</p>
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 0.5, delay: 0.2 }}
+                    >
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    </motion.div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-green-600 mb-1">{t('subscribe.success')}</h3>
+                    <p className="text-sm text-green-600/80 mb-2">
+                      Thank you for subscribing! You'll receive updates about new releases and exclusive content.
+                    </p>
+                    <p className="text-xs text-green-600/70">
+                      💡 Want to unsubscribe later? Simply use our Contact form and let us know.
+                    </p>
+                  </div>
+                </div>
               </motion.div>
             )}
 
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              {t('subscribe.privacy', "We respect your privacy. Unsubscribe at any time.")}
-            </p>
+            <div className="text-xs text-muted-foreground text-center mt-4 space-y-1">
+              <p>{t('subscribe.privacy', "We respect your privacy. Your email will never be shared.")}</p>
+              <p className="text-xs text-muted-foreground/80">
+                📧 To unsubscribe, simply <a href="#contact" className="underline hover:text-foreground transition-colors">reach out via our Contact form</a>
+              </p>
+            </div>
           </form>
         </motion.div>
       </div>

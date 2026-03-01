@@ -9,6 +9,16 @@ export interface TrackingMetadata {
   [key: string]: unknown;
 }
 
+// Get or create a unique visitor ID for this session
+const getVisitorId = (): string => {
+  let visitorId = localStorage.getItem('visitor_id');
+  if (!visitorId) {
+    visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('visitor_id', visitorId);
+  }
+  return visitorId;
+};
+
 export const AnalyticsEvents = {
   BOOK_VIEW: 'book_view',
   BOOK_CLICK: 'book_click',
@@ -33,30 +43,34 @@ export async function trackAnalytics(
   bookId?: string
 ): Promise<void> {
   try {
-    // Only track if analytics is enabled
-    if (!import.meta.env.VITE_ANALYTICS_ENABLED) {
-      return;
-    }
+    // Get visitor ID for unique visitor tracking
+    const visitorId = userId || getVisitorId();
 
-    // Store locally first for offline support
+    // Store locally first for offline support / queue backup
     const event = {
       type: eventType,
       metadata,
-      userId,
+      userId: visitorId,
       bookId,
       timestamp: new Date().toISOString(),
     };
 
-    // Save to local storage queue
+    // Save to local storage queue as backup
     const queue = JSON.parse(localStorage.getItem('analytics_queue') || '[]');
     queue.push(event);
     localStorage.setItem('analytics_queue', JSON.stringify(queue.slice(-100)));
 
-    // Only send non-critical analytics events that don't require RLS permissions
-    // Skip sending to Supabase to avoid RLS policy errors
-    console.debug('📊 Analytics tracked locally:', eventType);
+    // Send to Supabase database (main tracking method)
+    console.log(`📊 Analytics: ${eventType}`, { visitorId, bookId, metadata });
+    await supabaseTrackEvent(
+      eventType,
+      visitorId,
+      bookId,
+      metadata
+    );
   } catch (error) {
-    console.debug('Error tracking event locally:', error);
+    console.debug('Error tracking analytics event:', error);
+    // Continue silently - don't block user interactions
   }
 }
 

@@ -6,7 +6,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { AudioPlayer } from './AudioPlayer';
 import { Book as SupabaseBook, fetchChapters, Chapter } from '../../../lib/supabaseClient';
-import { trackPreviewOpen, trackChapterRead } from '../../../lib/analytics';
+import { trackPreviewOpen, trackChapterRead, trackExternalLink } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
 
 interface ChapterPreviewModalProps {
@@ -193,6 +193,7 @@ export function ChapterPreviewModal({ isOpen, onClose, book }: ChapterPreviewMod
                     href={book.book_link}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackExternalLink(book.book_platform || 'platform', book.id, book.title)}
                     className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full"
                   >
                     <ExternalLink className="w-4 h-4" />

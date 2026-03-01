@@ -10,6 +10,7 @@ interface BookAnalyticsProps {
   likes?: number;
   commentCount?: number;
   onLikeChange?: (isLiked: boolean) => void;
+  onCommentsToggle?: () => void;
 }
 
 export function BookAnalytics({
@@ -19,6 +20,7 @@ export function BookAnalytics({
   likes = 0,
   commentCount = 0,
   onLikeChange,
+  onCommentsToggle,
 }: BookAnalyticsProps) {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
@@ -29,12 +31,9 @@ export function BookAnalytics({
 
   // Check if already liked and fetch real comment/like counts on mount
   useEffect(() => {
-    console.log('📚 BookAnalytics mounted for book:', bookId);
-    
     const fetchCounts = async () => {
       try {
         setIsLoading(true);
-        console.log('🔍 Fetching all analytics...');
         const [liked, commentCount, likeCount, readCount, clickCount] = await Promise.all([
           isBookLikedByUser(bookId),
           getBookCommentsCount(bookId),
@@ -42,14 +41,13 @@ export function BookAnalytics({
           getBookReadCount(bookId),
           getBookClickCount(bookId),
         ]);
-        console.log('✅ Fetch complete - liked:', liked, 'comments:', commentCount, 'likes:', likeCount, 'reads:', readCount, 'clicks:', clickCount);
         setIsLiked(liked);
         setRealCommentCount(commentCount);
         setLikeCount(likeCount);
         setReadCount(readCount);
         setClickCount(clickCount);
       } catch (error) {
-        console.error('❌ Error fetching analytics:', error);
+        console.error('Error fetching analytics:', error);
       } finally {
         setIsLoading(false);
       }
@@ -59,7 +57,6 @@ export function BookAnalytics({
     
     // Refresh counts every 3 seconds to catch interactions (reads, clicks) in real-time
     const interval = setInterval(() => {
-      console.log('🔄 Refreshing analytics...');
       fetchCounts();
     }, 3000);
     
@@ -67,88 +64,60 @@ export function BookAnalytics({
   }, [bookId]);
 
   const handleLike = async () => {
-    console.log('🔍 Like button clicked for book:', bookId);
-    console.log('📊 Current state - isLiked:', isLiked, 'isLoading:', isLoading);
-    
     if (isLiked) {
-      console.log('⚠️ Already liked, preventing duplicate');
       return;
     }
     
     setIsLoading(true);
-    console.log('⏳ Attempting to like book...');
     try {
       const success = await likeBook(bookId);
-      console.log('📝 Like result:', success);
       
       if (success) {
-        console.log('✅ Like successful, fetching updated count...');
         // Fetch the new like count from database
         const newLikeCount = await getBookLikeCount(bookId);
-        console.log('📊 Updated like count:', newLikeCount);
         
         setIsLiked(true);
         setLikeCount(newLikeCount);
         onLikeChange?.(true);
-      } else {
-        console.warn('⚠️ Like failed - check console for error details');
       }
     } catch (error) {
-      console.error('🔴 Exception during like:', error);
+      console.error('Error liking book:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const stats = [
-    {
-      icon: Heart,
-      label: 'Likes',
-      value: likeCount,
-      color: 'text-red-600',
-      bgColor: 'bg-red-50',
-    },
-    {
-      icon: MessageCircle,
-      label: 'Comments',
-      value: realCommentCount,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-  ];
-
   return (
     <div className="w-full space-y-4">
-      {/* Analytics Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className={`${stat.bgColor} rounded-lg p-3 text-center border border-border/30`}
-            >
-              <Icon className={`w-5 h-5 ${stat.color} mx-auto mb-2`} />
-              <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-              <p className="text-xs text-gray-600">{stat.label}</p>
-            </div>
-          );
-        })}
-      </div>
+      {/* Analytics Grid - Clickable Cards */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Like Card - Clickable */}
+        <button
+          onClick={handleLike}
+          disabled={isLoading || isLiked}
+          className={`rounded-lg p-4 text-center border-2 transition-all transform hover:scale-105 ${
+            isLiked
+              ? 'bg-red-50 border-red-300 shadow-md'
+              : 'bg-white border-border/30 hover:bg-red-50 hover:border-red-200 cursor-pointer'
+          } ${isLoading ? 'opacity-50' : ''}`}
+        >
+          <Heart className={`w-6 h-6 text-red-600 mx-auto mb-2 ${
+            isLiked ? 'fill-current' : ''
+          }`} />
+          <p className="text-2xl font-bold text-gray-900">{likeCount}</p>
+          <p className="text-xs text-gray-600 font-medium">{isLiked ? 'Liked ✓' : 'Likes'}</p>
+        </button>
 
-      {/* Like Button */}
-      <Button
-        onClick={handleLike}
-        disabled={isLoading || isLiked}
-        className={`w-full gap-2 py-2 transition-colors ${
-          isLiked
-            ? 'bg-red-600 text-white border border-red-600 hover:bg-red-700'
-            : 'bg-white border border-border/50 text-gray-900 hover:bg-red-50 hover:border-red-200'
-        }`}
-      >
-        <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-        {isLiked ? 'Liked ✓' : 'Like this book'}
-      </Button>
+        {/* Comments Card - Clickable */}
+        <button
+          onClick={onCommentsToggle}
+          className="rounded-lg p-4 text-center border-2 border-border/30 bg-white hover:bg-purple-50 hover:border-purple-200 transition-all transform hover:scale-105 cursor-pointer"
+        >
+          <MessageCircle className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+          <p className="text-2xl font-bold text-gray-900">{realCommentCount}</p>
+          <p className="text-xs text-gray-600 font-medium">Comments</p>
+        </button>
+      </div>
     </div>
   );
 }
