@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useI18n } from '../../../hooks/useI18n';
+import { getAuthorSettings as getAuthorSettingsFromDB } from '../../../lib/siteSettings';
 
 interface Review {
   id: string;
@@ -19,20 +20,20 @@ export function SocialProof() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
 
-  // Load reviews from localStorage (admin settings)
+  // Load reviews from Supabase
   useEffect(() => {
-    const authorSettingsStr = localStorage.getItem('authorSettings');
-    if (authorSettingsStr) {
+    const loadReviews = async () => {
       try {
-        const authorSettings = JSON.parse(authorSettingsStr);
-        if (authorSettings.reviews && Array.isArray(authorSettings.reviews)) {
+        const authorSettings = await getAuthorSettingsFromDB();
+        if (authorSettings && authorSettings.reviews && Array.isArray(authorSettings.reviews)) {
           setReviews(authorSettings.reviews);
           setCurrentPage(0);
         }
       } catch (error) {
         console.error('Error loading reviews:', error);
       }
-    }
+    };
+    loadReviews();
   }, []);
 
   if (reviews.length === 0) {

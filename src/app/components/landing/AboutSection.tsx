@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { BookOpen, Users, Heart } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useI18n } from '../../../hooks/useI18n';
+import { getAuthorSettings as getAuthorSettingsFromDB } from '../../../lib/siteSettings';
 
 interface AuthorSettings {
   name: string;
@@ -18,22 +19,41 @@ export function AboutSection() {
   const [authorSettings, setAuthorSettings] = useState<AuthorSettings | null>(null);
 
   useEffect(() => {
-    const authorSettingsStr = localStorage.getItem('authorSettings');
-    if (authorSettingsStr) {
+    const loadSettings = async () => {
       try {
-        const settings = JSON.parse(authorSettingsStr);
-        setAuthorSettings({
-          name: settings.name || 'NENSHA JENNIFER',
-          bio: settings.bio || '',
-          profileImage: settings.profileImage,
-          totalReads: settings.totalReads || 0,
-          booksPublished: settings.booksPublished || 0,
-          followers: settings.followers || 0,
-        });
+        const settings = await getAuthorSettingsFromDB();
+        if (settings) {
+          setAuthorSettings({
+            name: settings.name || 'NENSHA JENNIFER',
+            bio: settings.bio || '',
+            profileImage: settings.profileImage,
+            totalReads: settings.totalReads || 0,
+            booksPublished: settings.booksPublished || 0,
+            followers: settings.followers || 0,
+          });
+        } else {
+          // Set default if no settings found
+          setAuthorSettings({
+            name: 'NENSHA JENNIFER',
+            bio: '',
+            totalReads: 0,
+            booksPublished: 0,
+            followers: 0,
+          });
+        }
       } catch (error) {
         console.error('Error loading author settings:', error);
+        // Set default values on error
+        setAuthorSettings({
+          name: 'NENSHA JENNIFER',
+          bio: '',
+          totalReads: 0,
+          booksPublished: 0,
+          followers: 0,
+        });
       }
-    }
+    };
+    loadSettings();
   }, []);
 
   // Format numbers for display

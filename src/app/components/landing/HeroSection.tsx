@@ -79,20 +79,29 @@ export function HeroSection() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load site settings from localStorage
+  // Load site settings from Supabase
   useEffect(() => {
-    const siteSettingsStr = localStorage.getItem('siteSettings');
-    if (siteSettingsStr) {
+    const loadSettings = async () => {
       try {
-        const settings = JSON.parse(siteSettingsStr);
-        setSiteSettings({
-          heroImage: settings.heroImage,
-          platformLinks: settings.platformLinks || [],
-        });
+        // Load from Supabase site_settings_extended table
+        const { data, error } = await (await import('../../../lib/supabaseClient')).supabase
+          .from('site_settings_extended')
+          .select('hero_image')
+          .single();
+
+        if (!error && data) {
+          setSiteSettings({
+            heroImage: data.hero_image,
+            platformLinks: [], // Placeholder - will add platform links to admin soon
+          });
+        }
       } catch (error) {
-        console.error('Error loading site settings:', error);
+        console.error('Error loading site settings from Supabase:', error);
+        // Fall back to empty defaults
       }
-    }
+    };
+
+    loadSettings();
   }, []);
 
   const handlePlatformLink = (platform: string, url?: string) => {
