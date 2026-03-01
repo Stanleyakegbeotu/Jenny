@@ -15,15 +15,8 @@ import {
   NotificationSettings as DBNotificationSettings,
 } from '../../../lib/siteSettings';
 
-interface Review {
-  id: string;
-  quote: string;
-  author: string;
-  platform: string;
-  rating: number;
-}
-
 interface AuthorSettings {
+  id?: string;
   name: string;
   bio: string;
   email: string;
@@ -51,6 +44,7 @@ interface SiteSettings {
 }
 
 interface NotificationSettings {
+  id?: string;
   notifyNewSubscribers: boolean;
   notifyContactForm: boolean;
   notifyBookViews: boolean;
@@ -102,6 +96,7 @@ export function SettingsPage() {
 
         if (author) {
           setAuthorSettings({
+            id: author.id,
             name: author.name || '',
             bio: author.bio || '',
             email: author.email || '',
@@ -118,6 +113,7 @@ export function SettingsPage() {
 
         if (notifications) {
           setNotificationSettings({
+            id: notifications.id,
             notifyNewSubscribers: notifications.notifyNewSubscribers,
             notifyContactForm: notifications.notifyContactForm,
             notifyBookViews: notifications.notifyBookViews,

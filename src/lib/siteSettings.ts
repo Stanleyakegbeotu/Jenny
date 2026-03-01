@@ -27,6 +27,7 @@ export interface AuthorSettings {
   instagramUrl?: string;
   twitterUrl?: string;
   linkedinUrl?: string;
+  reviews?: any[];
 }
 
 export interface NotificationSettings {
@@ -147,6 +148,42 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
 
     if (error) {
       console.error('Error fetching author settings:', error);
+      // If no row exists, create one with defaults
+      if (error.code === 'PGRST116') {
+        console.log('No author settings found, creating default row...');
+        const insertResult = await supabase
+          .from('author_settings')
+          .insert({
+            name: 'Jennifer Nensha',
+            bio: 'Romance author crafting tales of love and passion.',
+            email: 'contact@jennifernens.com',
+            total_reads: 0,
+            books_published: 0,
+            followers: 0,
+          })
+          .select()
+          .single();
+
+        if (insertResult.error) {
+          console.error('Failed to create default author settings:', insertResult.error);
+          return null;
+        }
+
+        return {
+          id: insertResult.data?.id,
+          name: insertResult.data?.name || 'Jennifer Nensha',
+          bio: insertResult.data?.bio || '',
+          email: insertResult.data?.email || '',
+          profileImage: insertResult.data?.profile_image,
+          totalReads: insertResult.data?.total_reads || 0,
+          booksPublished: insertResult.data?.books_published || 0,
+          followers: insertResult.data?.followers || 0,
+          instagramUrl: insertResult.data?.instagram_url,
+          twitterUrl: insertResult.data?.twitter_url,
+          linkedinUrl: insertResult.data?.linkedin_url,
+          reviews: insertResult.data?.reviews || [],
+        };
+      }
       return null;
     }
 
@@ -162,6 +199,7 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
       instagramUrl: data?.instagram_url,
       twitterUrl: data?.twitter_url,
       linkedinUrl: data?.linkedin_url,
+      reviews: data?.reviews || [],
     };
   } catch (err) {
     console.error('Unexpected error fetching author settings:', err);
@@ -174,6 +212,11 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
  */
 export async function updateAuthorSettings(settings: AuthorSettings): Promise<boolean> {
   try {
+    if (!settings.id) {
+      console.error('Cannot update author settings: ID is missing');
+      return false;
+    }
+
     const { error } = await supabase
       .from('author_settings')
       .update({
@@ -187,15 +230,17 @@ export async function updateAuthorSettings(settings: AuthorSettings): Promise<bo
         instagram_url: settings.instagramUrl,
         twitter_url: settings.twitterUrl,
         linkedin_url: settings.linkedinUrl,
+        reviews: settings.reviews || [],
         updated_at: new Date().toISOString(),
       })
-      .eq('id', settings.id || '00000000-0000-0000-0000-000000000000');
+      .eq('id', settings.id);
 
     if (error) {
       console.error('Error updating author settings:', error);
       return false;
     }
 
+    console.log('✅ Author settings updated successfully');
     return true;
   } catch (err) {
     console.error('Unexpected error updating author settings:', err);
@@ -219,6 +264,31 @@ export async function getNotificationSettings(): Promise<NotificationSettings | 
 
     if (error) {
       console.error('Error fetching notification settings:', error);
+      // If no row exists, create one with defaults
+      if (error.code === 'PGRST116') {
+        console.log('No notification settings found, creating default row...');
+        const insertResult = await supabase
+          .from('notification_settings')
+          .insert({
+            notify_new_subscribers: true,
+            notify_contact_form: true,
+            notify_book_views: false,
+          })
+          .select()
+          .single();
+
+        if (insertResult.error) {
+          console.error('Failed to create default notification settings:', insertResult.error);
+          return null;
+        }
+
+        return {
+          id: insertResult.data?.id,
+          notifyNewSubscribers: insertResult.data?.notify_new_subscribers ?? true,
+          notifyContactForm: insertResult.data?.notify_contact_form ?? true,
+          notifyBookViews: insertResult.data?.notify_book_views ?? false,
+        };
+      }
       return null;
     }
 
@@ -241,6 +311,11 @@ export async function updateNotificationSettings(
   settings: NotificationSettings
 ): Promise<boolean> {
   try {
+    if (!settings.id) {
+      console.error('Cannot update notification settings: ID is missing');
+      return false;
+    }
+
     const { error } = await supabase
       .from('notification_settings')
       .update({
@@ -249,13 +324,14 @@ export async function updateNotificationSettings(
         notify_book_views: settings.notifyBookViews,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', settings.id || '00000000-0000-0000-0000-000000000000');
+      .eq('id', settings.id);
 
     if (error) {
       console.error('Error updating notification settings:', error);
       return false;
     }
 
+    console.log('✅ Notification settings updated successfully');
     return true;
   } catch (err) {
     console.error('Unexpected error updating notification settings:', err);

@@ -63,6 +63,7 @@ CREATE TABLE author_settings (
   instagram_url text,
   twitter_url text,
   linkedin_url text,
+  reviews jsonb DEFAULT '[]'::jsonb,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
