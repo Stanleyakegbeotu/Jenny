@@ -444,35 +444,47 @@ export function SettingsPage() {
               <div className="p-6 bg-secondary/30 rounded-lg border border-border space-y-4">
                 <h3 className="font-semibold text-lg">Add New Review</h3>
                 <ReviewForm
-                  onSubmit={(review) => {
+                  onSubmit={async (review) => {
                     const newReview: Review = {
                       id: Date.now().toString(),
                       ...review,
                     };
-                    setAuthorSettings({
+                    const updatedReviews = [...(authorSettings.reviews || []), newReview];
+                    const updatedSettings = {
                       ...authorSettings,
-                      reviews: [...(authorSettings.reviews || []), newReview],
-                    });
+                      reviews: updatedReviews,
+                    };
+                    setAuthorSettings(updatedSettings);
+                    
+                    // Save immediately to Supabase
+                    try {
+                      const result = await upsertAuthorSettingsInDB(updatedSettings as unknown as DBAuthorSettings);
+                      if (result) {
+                        console.log('✅ Review added and saved to Supabase');
+                      }
+                    } catch (err) {
+                      console.error('Error adding review:', err);
+                    }
                   }}
                 />
               </div>
 
               {/* Existing Reviews */}
-              <div>
-                <h3 className="font-semibold text-lg mb-4">Current Reviews ({authorSettings.reviews?.length || 0})</h3>
+              <div className="space-y-3">
+                <h3 className="font-semibold text-lg">Current Reviews ({authorSettings.reviews?.length || 0})</h3>
                 {authorSettings.reviews && authorSettings.reviews.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="max-h-[400px] overflow-y-auto border border-border rounded-lg p-4 bg-card/50 space-y-4">
                     {authorSettings.reviews.map((review) => (
                       <div key={review.id} className="p-4 bg-card border border-border rounded-lg space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1 min-w-0">
                             <div className="flex gap-1 mb-2">
                               {[...Array(review.rating)].map((_, i) => (
                                 <span key={i}>⭐</span>
                               ))}
                             </div>
-                            <p className="italic text-foreground mb-2">"{review.quote}"</p>
-                            <div className="flex gap-4 text-sm">
+                            <p className="italic text-foreground mb-2 break-words whitespace-pre-wrap">"{review.quote}"</p>
+                            <div className="flex gap-4 text-sm flex-wrap">
                               <span className="font-medium">{review.author}</span>
                               <span className="text-muted-foreground">{review.platform}</span>
                             </div>
@@ -480,13 +492,27 @@ export function SettingsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              setAuthorSettings({
+                            onClick={async () => {
+                              // Remove review from local state
+                              const updatedReviews = authorSettings.reviews?.filter(r => r.id !== review.id) || [];
+                              const updatedSettings = {
                                 ...authorSettings,
-                                reviews: authorSettings.reviews?.filter(r => r.id !== review.id) || [],
-                              });
+                                reviews: updatedReviews,
+                              };
+                              setAuthorSettings(updatedSettings);
+                              
+                              // Save immediately to Supabase
+                              try {
+                                const result = await upsertAuthorSettingsInDB(updatedSettings as unknown as DBAuthorSettings);
+                                if (result) {
+                                  console.log('✅ Review deleted and saved to Supabase');
+                                }
+                              } catch (err) {
+                                console.error('Error deleting review:', err);
+                              }
                             }}
-                            className="text-destructive hover:bg-destructive/10"
+                            className="text-destructive hover:bg-destructive/10 shrink-0"
+                            title="Delete review"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>

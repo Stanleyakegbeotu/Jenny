@@ -39,19 +39,30 @@ export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }:
   };
 
   return (
-    <motion.div
-      animate={{
-        width: collapsed ? 80 : 256,
-        opacity: shouldHide ? 0 : 1,
-        x: isMobile && collapsed ? -350 : 0,
-      }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className={`${
-        isMobile ? 'fixed left-0 top-0 bottom-0 z-50' : 'relative'
-      } h-screen bg-sidebar border-r border-sidebar-border flex flex-col ${
-        shouldHide ? 'pointer-events-none' : 'pointer-events-auto'
-      }`}
-    >
+    <>
+      {/* Overlay backdrop on mobile when sidebar is open */}
+      <AnimatePresence>
+        {isMobile && !collapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-[99] md:hidden"
+            onClick={() => onPageChange('dashboard')} // Close sidebar when backdrop clicked
+          />
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        animate={{
+          width: isMobile && collapsed ? 0 : collapsed ? 80 : 256,
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className={`${
+          isMobile ? 'fixed left-0 top-0 bottom-0 z-[100] overflow-hidden' : 'relative'
+        } h-screen bg-sidebar border-r border-sidebar-border flex flex-col`}
+      >
       {/* Header */}
       <div className="p-6 border-b border-sidebar-border overflow-hidden">
         {!collapsed && (
@@ -134,5 +145,6 @@ export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }:
         </Button>
       </div>
     </motion.div>
+    </>
   );
 }

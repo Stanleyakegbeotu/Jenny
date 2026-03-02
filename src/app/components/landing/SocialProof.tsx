@@ -76,17 +76,17 @@ export function SocialProof() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-gradient-to-br from-card to-secondary rounded-2xl p-8 shadow-lg border border-border hover:shadow-2xl transition-shadow duration-300"
+              className="bg-gradient-to-br from-card to-secondary rounded-2xl p-8 shadow-lg border border-border hover:shadow-2xl transition-shadow duration-300 overflow-hidden flex flex-col"
             >
-              <Quote className="w-10 h-10 text-primary/30 mb-4" />
+              <Quote className="w-10 h-10 text-primary/30 mb-4 flex-shrink-0" />
               
-              <div className="flex gap-1 mb-4">
+              <div className="flex gap-1 mb-4 flex-shrink-0">
                 {[...Array(review.rating)].map((_, i) => (
                   <Star key={i} className="w-5 h-5 fill-primary text-primary" />
                 ))}
               </div>
 
-              <p className="text-foreground mb-6 leading-relaxed italic">
+              <p className="text-foreground mb-6 leading-relaxed italic break-words overflow-hidden flex-shrink min-w-0">
                 "{review.quote}"
               </p>
 
