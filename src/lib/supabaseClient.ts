@@ -420,11 +420,30 @@ export async function trackEvent(
       timestamp: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    // Try inserting with explicit book_id column first
+    let insertResult = await supabase
       .from('analytics_events')
       .insert([eventRecord])
       .select()
       .single();
+
+    // If schema doesn't include book_id (PGRST204), fallback by embedding bookId in metadata
+    if (insertResult.error && insertResult.error.code === 'PGRST204') {
+      console.warn('analytics_events schema missing book_id, falling back to metadata');
+      const fallbackRecord = {
+        event_type: eventType,
+        user_id: userId || 'anonymous',
+        metadata: { ...(metadata || {}), book_id: bookId || null },
+        timestamp: new Date().toISOString(),
+      };
+      insertResult = await supabase
+        .from('analytics_events')
+        .insert([fallbackRecord])
+        .select()
+        .single();
+    }
+
+    const { data, error } = insertResult;
 
     if (error) {
       console.error('❌ Error tracking event:', { error, eventRecord });
