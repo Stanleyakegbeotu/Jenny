@@ -19,6 +19,8 @@ export function usePWAInstall() {
 
     // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
+      // Always prevent the native browser install prompt
+      // Install is only triggered via our custom button in AdminSidebar
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
