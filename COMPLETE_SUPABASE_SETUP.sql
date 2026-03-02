@@ -285,13 +285,13 @@ CREATE TABLE chapters (
   content text,
   preview_text text,
   chapter_number integer DEFAULT 1,
-  order integer DEFAULT 1,
+  "order" integer DEFAULT 1,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE INDEX chapters_book_id_idx ON chapters(book_id);
-CREATE INDEX chapters_order_idx ON chapters(book_id, order);
+CREATE INDEX chapters_order_idx ON chapters(book_id, "order");
 
 ALTER TABLE chapters ENABLE ROW LEVEL SECURITY;
 
