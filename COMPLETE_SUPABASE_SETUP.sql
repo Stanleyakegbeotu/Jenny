@@ -64,6 +64,7 @@ CREATE TABLE author_settings (
   twitter_url text,
   linkedin_url text,
   reviews jsonb DEFAULT '[]'::jsonb,
+  is_default boolean DEFAULT true UNIQUE,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -78,9 +79,9 @@ DROP POLICY IF EXISTS "author_update" ON author_settings;
 CREATE POLICY "author_update" ON author_settings FOR UPDATE USING (true) WITH CHECK (true);
 
 -- Insert default author data
-INSERT INTO author_settings (name, bio, email)
-VALUES ('Jennifer Nensha', 'Romance author crafting tales of love and passion.', 'contact@jennifernens.com')
-ON CONFLICT DO NOTHING;
+INSERT INTO author_settings (name, bio, email, is_default)
+VALUES ('Jennifer Nensha', 'Romance author crafting tales of love and passion.', 'contact@jennifernens.com', true)
+ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
 -- 3. SITE SETTINGS EXTENDED TABLE - Stores Extended Site Configuration
@@ -93,6 +94,7 @@ CREATE TABLE site_settings_extended (
   site_tagline text DEFAULT '',
   support_email text DEFAULT '',
   hero_image text,
+  is_default boolean DEFAULT true UNIQUE,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -107,9 +109,9 @@ DROP POLICY IF EXISTS "ext_update" ON site_settings_extended;
 CREATE POLICY "ext_update" ON site_settings_extended FOR UPDATE USING (true) WITH CHECK (true);
 
 -- Insert default site data
-INSERT INTO site_settings_extended (site_title, site_tagline, support_email)
-VALUES ('Nensha Jennifer - Romance Author', 'Discover captivating romance stories from acclaimed author Jennifer Nensha', 'support@jennifernens.com')
-ON CONFLICT DO NOTHING;
+INSERT INTO site_settings_extended (site_title, site_tagline, support_email, is_default)
+VALUES ('Nensha Jennifer - Romance Author', 'Discover captivating romance stories from acclaimed author Jennifer Nensha', 'support@jennifernens.com', true)
+ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
 -- 4. NOTIFICATION SETTINGS TABLE - Stores Notification Preferences
@@ -121,6 +123,7 @@ CREATE TABLE notification_settings (
   notify_new_subscribers boolean DEFAULT true,
   notify_contact_form boolean DEFAULT true,
   notify_book_views boolean DEFAULT false,
+  is_default boolean DEFAULT true UNIQUE,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -135,9 +138,9 @@ DROP POLICY IF EXISTS "notif_update" ON notification_settings;
 CREATE POLICY "notif_update" ON notification_settings FOR UPDATE USING (true) WITH CHECK (true);
 
 -- Insert default notification settings
-INSERT INTO notification_settings (notify_new_subscribers, notify_contact_form, notify_book_views)
-VALUES (true, true, false)
-ON CONFLICT DO NOTHING;
+INSERT INTO notification_settings (notify_new_subscribers, notify_contact_form, notify_book_views, is_default)
+VALUES (true, true, false, true)
+ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
 -- 5. CONTACT MESSAGES TABLE - Stores Contact Form Submissions

@@ -157,7 +157,7 @@ export function BooksManagement() {
     setError(null);
 
     try {
-      let cover_url = formData.cover_url;
+      let cover_url: string | null = formData.cover_url;
 
       // Upload cover if a new file was selected
       if (coverFile) {
@@ -390,12 +390,14 @@ export function BooksManagement() {
 
               {/* Book Platform Selection */}
               <div>
-                <label className="text-sm font-medium">Book Platform (Optional)</label>
+                <label htmlFor="book_platform" className="text-sm font-medium">Book Platform (Optional)</label>
                 <select
+                  id="book_platform"
                   name="book_platform"
                   value={formData.book_platform}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange(e as any)}
                   className="w-full mt-1 px-3 py-2 border border-border rounded-md bg-background text-foreground"
+                  aria-label="Select book platform"
                 >
                   <option value="">Select a platform...</option>
                   <option value="Inkitt">Inkitt</option>

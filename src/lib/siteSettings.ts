@@ -248,6 +248,47 @@ export async function updateAuthorSettings(settings: AuthorSettings): Promise<bo
   }
 }
 
+/**
+ * Upsert author settings (insert if missing, update if exists)
+ */
+export async function upsertAuthorSettings(settings: AuthorSettings): Promise<boolean> {
+  try {
+    const payload: any = {
+      id: settings.id,
+      name: settings.name,
+      bio: settings.bio,
+      email: settings.email,
+      profile_image: settings.profileImage,
+      total_reads: settings.totalReads,
+      books_published: settings.booksPublished,
+      followers: settings.followers,
+      instagram_url: settings.instagramUrl,
+      twitter_url: settings.twitterUrl,
+      linkedin_url: settings.linkedinUrl,
+      reviews: settings.reviews || [],
+      is_default: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('author_settings')
+      .upsert(payload, { onConflict: 'is_default' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error upserting author settings:', error);
+      return false;
+    }
+
+    console.log('✅ Upserted author settings', data?.id);
+    return true;
+  } catch (err) {
+    console.error('Unexpected error upserting author settings:', err);
+    return false;
+  }
+}
+
 // ============================================================================
 // NOTIFICATION SETTINGS
 // ============================================================================
@@ -335,6 +376,39 @@ export async function updateNotificationSettings(
     return true;
   } catch (err) {
     console.error('Unexpected error updating notification settings:', err);
+    return false;
+  }
+}
+
+/**
+ * Upsert notification settings (insert if missing, update if exists)
+ */
+export async function upsertNotificationSettings(settings: NotificationSettings): Promise<boolean> {
+  try {
+    const payload: any = {
+      id: settings.id,
+      notify_new_subscribers: settings.notifyNewSubscribers,
+      notify_contact_form: settings.notifyContactForm,
+      notify_book_views: settings.notifyBookViews,
+      is_default: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('notification_settings')
+      .upsert(payload, { onConflict: 'is_default' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error upserting notification settings:', error);
+      return false;
+    }
+
+    console.log('✅ Upserted notification settings', data?.id);
+    return true;
+  } catch (err) {
+    console.error('Unexpected error upserting notification settings:', err);
     return false;
   }
 }

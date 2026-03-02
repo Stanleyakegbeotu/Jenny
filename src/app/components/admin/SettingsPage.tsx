@@ -9,11 +9,26 @@ import { AdminSettings } from './AdminSettings';
 import {
   getAuthorSettings as getAuthorSettingsFromDB,
   updateAuthorSettings as updateAuthorSettingsInDB,
+  upsertAuthorSettings as upsertAuthorSettingsInDB,
   getNotificationSettings as getNotificationSettingsFromDB,
   updateNotificationSettings as updateNotificationSettingsInDB,
+  upsertNotificationSettings as upsertNotificationSettingsInDB,
   AuthorSettings as DBAuthorSettings,
   NotificationSettings as DBNotificationSettings,
 } from '../../../lib/siteSettings';
+
+interface Review {
+  id: string;
+  quote: string;
+  author: string;
+  platform: string;
+  rating: number;
+}
+
+interface PlatformLink {
+  name: string;
+  url: string;
+}
 
 interface AuthorSettings {
   id?: string;
@@ -28,11 +43,6 @@ interface AuthorSettings {
   twitterUrl?: string;
   linkedinUrl?: string;
   reviews: Review[];
-}
-
-interface PlatformLink {
-  name: string;
-  url: string;
 }
 
 interface SiteSettings {
@@ -130,14 +140,14 @@ export function SettingsPage() {
   const handleSaveSettings = async () => {
     setSaveState('saving');
     try {
-      // Save author and notification settings to Supabase
-      const authorResult = await updateAuthorSettingsInDB(authorSettings as unknown as DBAuthorSettings);
-      const notificationResult = await updateNotificationSettingsInDB(
+      // Upsert author and notification settings to Supabase (insert if missing)
+      const authorResult = await upsertAuthorSettingsInDB(authorSettings as unknown as DBAuthorSettings);
+      const notificationResult = await upsertNotificationSettingsInDB(
         notificationSettings as unknown as DBNotificationSettings
       );
 
       if (authorResult && notificationResult) {
-        console.log('✅ Settings saved to Supabase successfully');
+        console.log('✅ Settings upserted to Supabase successfully');
         setSaveState('success');
         setTimeout(() => setSaveState('idle'), 3000);
       } else {
