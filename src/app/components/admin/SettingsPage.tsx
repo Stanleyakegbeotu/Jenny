@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Save, AlertCircle, CheckCircle, Eye, EyeOff, Trash2, Plus, Loader } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle, Eye, EyeOff, Trash2, Plus, Loader, RotateCw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
@@ -16,6 +16,11 @@ import {
   AuthorSettings as DBAuthorSettings,
   NotificationSettings as DBNotificationSettings,
 } from '../../../lib/siteSettings';
+import {
+  getTotalReadsCount,
+  getTotalBooksPublished,
+  getTotalSubscribersCount,
+} from '../../../lib/supabaseClient';
 
 interface Review {
   id: string;
@@ -38,7 +43,7 @@ interface AuthorSettings {
   profileImage?: string;
   totalReads: number;
   booksPublished: number;
-  followers: number;
+  subscribers: number;
   instagramUrl?: string;
   twitterUrl?: string;
   linkedinUrl?: string;
@@ -64,6 +69,7 @@ export function SettingsPage() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState<'author' | 'reviews' | 'hero' | 'site' | 'notifications' | 'formspree'>('author');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
 
   // Author Settings
   const [authorSettings, setAuthorSettings] = useState<AuthorSettings>({
@@ -72,7 +78,7 @@ export function SettingsPage() {
     email: 'contact@jennifernens.com',
     totalReads: 0,
     booksPublished: 0,
-    followers: 0,
+    subscribers: 0,
     instagramUrl: '',
     twitterUrl: '',
     linkedinUrl: '',
@@ -113,11 +119,11 @@ export function SettingsPage() {
             profileImage: author.profileImage,
             totalReads: author.totalReads || 0,
             booksPublished: author.booksPublished || 0,
-            followers: author.followers || 0,
+            subscribers: author.subscribers || 0,
             instagramUrl: author.instagramUrl,
             twitterUrl: author.twitterUrl,
             linkedinUrl: author.linkedinUrl,
-            reviews: [],
+            reviews: author.reviews || [],
           });
         }
 
@@ -136,6 +142,31 @@ export function SettingsPage() {
 
     loadSettings();
   }, []);
+
+  // Load auto-calculated stats from database
+  const loadAuthorStats = async () => {
+    setIsLoadingStats(true);
+    try {
+      const [reads, books, subs] = await Promise.all([
+        getTotalReadsCount(),
+        getTotalBooksPublished(),
+        getTotalSubscribersCount(),
+      ]);
+
+      setAuthorSettings((prev) => ({
+        ...prev,
+        totalReads: reads,
+        booksPublished: books,
+        subscribers: subs,
+      }));
+
+      console.log('✅ Author stats refreshed from database:', { reads, books, subscribers: subs });
+    } catch (err) {
+      console.error('Error loading author stats:', err);
+    } finally {
+      setIsLoadingStats(false);
+    }
+  };
 
   const handleSaveSettings = async () => {
     setSaveState('saving');
@@ -301,41 +332,63 @@ export function SettingsPage() {
               </div>
 
               {/* Author Statistics */}
-              <div className="grid md:grid-cols-3 gap-6 p-6 bg-secondary/30 rounded-lg border border-border">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Total Reads</label>
-                  <Input
-                    type="number"
-                    value={authorSettings.totalReads}
-                    onChange={(e) => setAuthorSettings({ ...authorSettings, totalReads: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                    className="bg-background/50 border border-border/50 rounded-lg shadow-md"
-                    min="0"
-                  />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-lg">Author Statistics</h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={loadAuthorStats}
+                    disabled={isLoadingStats}
+                    className="gap-2"
+                  >
+                    <RotateCw className={`w-4 h-4 ${isLoadingStats ? 'animate-spin' : ''}`} />
+                    {isLoadingStats ? 'Loading...' : 'Refresh from Database'}
+                  </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  💡 These values are automatically calculated from your database. Click "Refresh" to update them. You can also manually override any value below.
+                </p>
+                
+                <div className="grid md:grid-cols-3 gap-6 p-6 bg-secondary/30 rounded-lg border border-border">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Total Reads</label>
+                    <p className="text-xs text-muted-foreground mb-2">Auto-calculated from books</p>
+                    <Input
+                      type="number"
+                      value={authorSettings.totalReads}
+                      onChange={(e) => setAuthorSettings({ ...authorSettings, totalReads: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                      className="bg-background/50 border border-border/50 rounded-lg shadow-md"
+                      min="0"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Books Published</label>
-                  <Input
-                    type="number"
-                    value={authorSettings.booksPublished}
-                    onChange={(e) => setAuthorSettings({ ...authorSettings, booksPublished: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                    className="bg-background/50 border border-border/50 rounded-lg shadow-md"
-                    min="0"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Books Published</label>
+                    <p className="text-xs text-muted-foreground mb-2">Auto-calculated from books table</p>
+                    <Input
+                      type="number"
+                      value={authorSettings.booksPublished}
+                      onChange={(e) => setAuthorSettings({ ...authorSettings, booksPublished: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                      className="bg-background/50 border border-border/50 rounded-lg shadow-md"
+                      min="0"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Followers</label>
-                  <Input
-                    type="number"
-                    value={authorSettings.followers}
-                    onChange={(e) => setAuthorSettings({ ...authorSettings, followers: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                    className="bg-background/50 border border-border/50 rounded-lg shadow-md"
-                    min="0"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Subscribers</label>
+                    <p className="text-xs text-muted-foreground mb-2">Auto-calculated from subscribers</p>
+                    <Input
+                      type="number"
+                      value={authorSettings.subscribers}
+                      onChange={(e) => setAuthorSettings({ ...authorSettings, subscribers: parseInt(e.target.value) || 0 })}
+                      placeholder="0"
+                      className="bg-background/50 border border-border/50 rounded-lg shadow-md"
+                      min="0"
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -79,28 +79,30 @@ export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }:
         )}
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPage === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onPageChange(item.id)}
-              className={`w-full flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-colors border border-black shadow-lg ${
-                isActive
-                  ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
-              }`}
-              title={collapsed ? item.label : undefined}
-            >
-              <Icon className="w-5 h-5 shrink-0" />
-              {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
-            </button>
-          );
-        })}
-      </nav>
+      {/* Navigation - scrollable container */}
+      <div className="flex-1 overflow-y-auto">
+        <nav className="p-4 space-y-2">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = currentPage === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onPageChange(item.id)}
+                className={`w-full flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-lg transition-colors border border-black shadow-lg ${
+                  isActive
+                    ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground'
+                }`}
+                title={collapsed ? item.label : undefined}
+              >
+                <Icon className="w-5 h-5 shrink-0" />
+                {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border space-y-2">

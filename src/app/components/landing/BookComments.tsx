@@ -83,7 +83,7 @@ export function BookComments({ bookId }: BookCommentsProps) {
               </p>
             </div>
           </div>
-          <p className="text-sm mb-3">{comment.content}</p>
+          <p className="text-sm mb-3 break-words whitespace-pre-wrap">{comment.content}</p>
           {comment.likes > 0 && (
             <div className="text-xs text-muted-foreground">
               👍 {comment.likes} {comment.likes === 1 ? 'like' : 'likes'}

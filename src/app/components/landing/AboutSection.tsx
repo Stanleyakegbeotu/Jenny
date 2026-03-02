@@ -11,7 +11,7 @@ interface AuthorSettings {
   profileImage?: string;
   totalReads: number;
   booksPublished: number;
-  followers: number;
+  subscribers: number;
 }
 
 export function AboutSection() {
@@ -29,7 +29,7 @@ export function AboutSection() {
             profileImage: settings.profileImage,
             totalReads: settings.totalReads || 0,
             booksPublished: settings.booksPublished || 0,
-            followers: settings.followers || 0,
+            subscribers: settings.subscribers || 0,
           });
         } else {
           // Set default if no settings found
@@ -38,7 +38,7 @@ export function AboutSection() {
             bio: '',
             totalReads: 0,
             booksPublished: 0,
-            followers: 0,
+            subscribers: 0,
           });
         }
       } catch (error) {
@@ -49,7 +49,7 @@ export function AboutSection() {
           bio: '',
           totalReads: 0,
           booksPublished: 0,
-          followers: 0,
+          subscribers: 0,
         });
       }
     };
@@ -69,7 +69,7 @@ export function AboutSection() {
   const stats = [
     { icon: BookOpen, label: t('about.totalReads', 'Total Reads'), value: formatNumber(authorSettings?.totalReads || 0) },
     { icon: Heart, label: t('about.booksPublished', 'Books Published'), value: authorSettings?.booksPublished || 0 },
-    { icon: Users, label: t('about.followers', 'Followers'), value: formatNumber(authorSettings?.followers || 0) },
+    { icon: Users, label: t('about.subscribers', 'Subscribers'), value: formatNumber(authorSettings?.subscribers || 0) },
   ];
 
   return (

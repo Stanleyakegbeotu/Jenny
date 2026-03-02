@@ -23,7 +23,7 @@ export interface AuthorSettings {
   profileImage?: string;
   totalReads: number;
   booksPublished: number;
-  followers: number;
+  subscribers: number; // Changed from followers
   instagramUrl?: string;
   twitterUrl?: string;
   linkedinUrl?: string;
@@ -177,7 +177,7 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
           profileImage: insertResult.data?.profile_image,
           totalReads: insertResult.data?.total_reads || 0,
           booksPublished: insertResult.data?.books_published || 0,
-          followers: insertResult.data?.followers || 0,
+          subscribers: insertResult.data?.followers || 0,
           instagramUrl: insertResult.data?.instagram_url,
           twitterUrl: insertResult.data?.twitter_url,
           linkedinUrl: insertResult.data?.linkedin_url,
@@ -195,7 +195,7 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
       profileImage: data?.profile_image,
       totalReads: data?.total_reads || 0,
       booksPublished: data?.books_published || 0,
-      followers: data?.followers || 0,
+      subscribers: data?.followers || 0,
       instagramUrl: data?.instagram_url,
       twitterUrl: data?.twitter_url,
       linkedinUrl: data?.linkedin_url,
@@ -261,7 +261,7 @@ export async function upsertAuthorSettings(settings: AuthorSettings): Promise<bo
       profile_image: settings.profileImage,
       total_reads: settings.totalReads,
       books_published: settings.booksPublished,
-      followers: settings.followers,
+      followers: settings.subscribers,
       instagram_url: settings.instagramUrl,
       twitter_url: settings.twitterUrl,
       linkedin_url: settings.linkedinUrl,

@@ -40,6 +40,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
 
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const synthRef = useRef<SpeechSynthesis | null>(null);
+  const isMountedRef = useRef(true);
 
   // Initialize speech synthesis and get available voices
   const initializeSynthesis = useCallback(() => {
@@ -50,9 +51,12 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
 
     const loadVoices = () => {
       const availableVoices = synth.getVoices();
-      setVoices(availableVoices);
-      if (availableVoices.length > 0) {
-        setSelectedVoice(availableVoices[0]);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setVoices(availableVoices);
+        if (availableVoices.length > 0) {
+          setSelectedVoice(availableVoices[0]);
+        }
       }
     };
 
@@ -64,10 +68,12 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
 
   // Initialize on component mount
   useEffect(() => {
+    isMountedRef.current = true;
     initializeSynthesis();
     
     // Cleanup on unmount
     return () => {
+      isMountedRef.current = false;
       if (synthRef.current) {
         synthRef.current.cancel();
       }
@@ -97,25 +103,35 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     const voiceToUse = voices[voiceIndex] || voices[0];
     if (voiceToUse) {
       utterance.voice = voiceToUse;
-      setSelectedVoice(voiceToUse);
+      if (isMountedRef.current) {
+        setSelectedVoice(voiceToUse);
+      }
     }
 
     utterance.onstart = () => {
-      setIsSpeaking(true);
-      setIsPaused(false);
+      if (isMountedRef.current) {
+        setIsSpeaking(true);
+        setIsPaused(false);
+      }
     };
 
     utterance.onend = () => {
-      setIsSpeaking(false);
-      setIsPaused(false);
+      if (isMountedRef.current) {
+        setIsSpeaking(false);
+        setIsPaused(false);
+      }
     };
 
     utterance.onpause = () => {
-      setIsPaused(true);
+      if (isMountedRef.current) {
+        setIsPaused(true);
+      }
     };
 
     utterance.onresume = () => {
-      setIsPaused(false);
+      if (isMountedRef.current) {
+        setIsPaused(false);
+      }
     };
 
     utteranceRef.current = utterance;
@@ -170,11 +186,6 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
       setSelectedVoice(voices[index]);
     }
   }, [voices]);
-
-  // Initialize on first render
-  if (isSupported && !synthRef.current) {
-    initializeSynthesis();
-  }
 
   return {
     isSupported,

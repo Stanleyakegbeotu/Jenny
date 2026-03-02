@@ -75,6 +75,9 @@ ALTER TABLE author_settings ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "author_select" ON author_settings;
 CREATE POLICY "author_select" ON author_settings FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "author_insert" ON author_settings;
+CREATE POLICY "author_insert" ON author_settings FOR INSERT WITH CHECK (true);
+
 DROP POLICY IF EXISTS "author_update" ON author_settings;
 CREATE POLICY "author_update" ON author_settings FOR UPDATE USING (true) WITH CHECK (true);
 
@@ -105,6 +108,9 @@ ALTER TABLE site_settings_extended ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "ext_select" ON site_settings_extended;
 CREATE POLICY "ext_select" ON site_settings_extended FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "ext_insert" ON site_settings_extended;
+CREATE POLICY "ext_insert" ON site_settings_extended FOR INSERT WITH CHECK (true);
+
 DROP POLICY IF EXISTS "ext_update" ON site_settings_extended;
 CREATE POLICY "ext_update" ON site_settings_extended FOR UPDATE USING (true) WITH CHECK (true);
 
@@ -133,6 +139,9 @@ ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
 -- Policies
 DROP POLICY IF EXISTS "notif_select" ON notification_settings;
 CREATE POLICY "notif_select" ON notification_settings FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "notif_insert" ON notification_settings;
+CREATE POLICY "notif_insert" ON notification_settings FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "notif_update" ON notification_settings;
 CREATE POLICY "notif_update" ON notification_settings FOR UPDATE USING (true) WITH CHECK (true);
@@ -206,15 +215,16 @@ DROP TABLE IF EXISTS analytics_events CASCADE;
 CREATE TABLE analytics_events (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   event_type text NOT NULL,
-  user_agent text,
-  ip_address text,
-  referrer text,
-  event_data jsonb,
-  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+  user_id text DEFAULT 'anonymous',
+  book_id uuid,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  timestamp timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE INDEX analytics_events_type_idx ON analytics_events(event_type);
-CREATE INDEX analytics_events_created_idx ON analytics_events(created_at);
+CREATE INDEX analytics_events_timestamp_idx ON analytics_events(timestamp);
+CREATE INDEX analytics_events_user_id_idx ON analytics_events(user_id);
+CREATE INDEX analytics_events_book_id_idx ON analytics_events(book_id);
 
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 

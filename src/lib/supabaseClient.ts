@@ -1122,3 +1122,77 @@ export async function getBookClickCount(bookId: string): Promise<number> {
     return 0;
   }
 }
+
+// ============================================================================
+// AUTHOR STATS - AUTOMATIC CALCULATION FROM DATABASE
+// ============================================================================
+
+/**
+ * Get total reads count from all books
+ */
+export async function getTotalReadsCount(): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('books')
+      .select('total_reads');
+
+    if (error) {
+      console.error('Error calculating total reads:', error);
+      return 0;
+    }
+
+    const total = (data || []).reduce((sum, book) => sum + (book.total_reads || 0), 0);
+    console.log('📚 Total reads calculated:', total);
+    return total;
+  } catch (error) {
+    console.error('Error in getTotalReadsCount:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get total books published count
+ */
+export async function getTotalBooksPublished(): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('books')
+      .select('id', { count: 'exact' });
+
+    if (error) {
+      console.error('Error calculating books published:', error);
+      return 0;
+    }
+
+    const count = data?.length || 0;
+    console.log('📖 Total books published calculated:', count);
+    return count;
+  } catch (error) {
+    console.error('Error in getTotalBooksPublished:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get total active subscribers count
+ */
+export async function getTotalSubscribersCount(): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from('subscribers')
+      .select('id')
+      .is('unsubscribed_at', null); // Only count active subscribers
+
+    if (error) {
+      console.error('Error calculating subscribers:', error);
+      return 0;
+    }
+
+    const count = (data || []).length;
+    console.log('👥 Total subscribers calculated:', count);
+    return count;
+  } catch (error) {
+    console.error('Error in getTotalSubscribersCount:', error);
+    return 0;
+  }
+}
