@@ -70,6 +70,8 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'author' | 'reviews' | 'hero' | 'site' | 'notifications' | 'formspree'>('author');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // Author Settings
   const [authorSettings, setAuthorSettings] = useState<AuthorSettings>({
@@ -191,6 +193,30 @@ export function SettingsPage() {
     }
   };
 
+  // Swipe handler for mobile tab navigation
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    setTouchEnd(e.changedTouches[0].clientX);
+    
+    if (touchStart === null || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50; // Swipe left to go to next tab
+    const isRightSwipe = distance < -50; // Swipe right to go to previous tab
+
+    const tabIds = ['author', 'reviews', 'hero', 'site', 'notifications', 'formspree'];
+    const currentIndex = tabIds.indexOf(activeTab);
+
+    if (isLeftSwipe && currentIndex < tabIds.length - 1) {
+      setActiveTab(tabIds[currentIndex + 1] as any);
+    } else if (isRightSwipe && currentIndex > 0) {
+      setActiveTab(tabIds[currentIndex - 1] as any);
+    }
+  };
+
   const tabs = [
     { id: 'author', label: 'Author Profile', icon: '👤' },
     { id: 'reviews', label: 'Reader Reviews', icon: '⭐' },
@@ -201,12 +227,13 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-32">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl mb-2 font-playfair truncate">Settings</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Configure your author platform and preferences.</p>
-      </div>
+    <div className="flex flex-col min-h-screen" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <div className="flex-1 space-y-6 overflow-y-auto">
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl md:text-3xl mb-2 font-playfair truncate">Settings</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Configure your author platform and preferences.</p>
+        </div>
 
       {/* Tab Navigation */}
       <div className="flex gap-1 border-b border-border overflow-x-auto pb-0 mb-6 justify-center">
@@ -640,39 +667,39 @@ export function SettingsPage() {
             <CardHeader>
               <CardTitle>Site Information</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium mb-2">Site Title *</label>
+            <CardContent className="space-y-8">
+              <div className="p-5 bg-secondary/40 rounded-lg border border-border/50 space-y-3">
+                <label className="block text-sm font-semibold text-foreground">Site Title *</label>
                 <Input
                   value={siteSettings.siteTitle}
                   onChange={(e) => setSiteSettings({ ...siteSettings, siteTitle: e.target.value })}
                   placeholder="Your site title"
-                  className="bg-background/50"
+                  className="bg-background border-2 border-border/60 rounded-lg shadow-sm focus:border-primary"
                 />
-                <p className="text-xs text-muted-foreground mt-1">This appears in browser tabs and search results</p>
+                <p className="text-xs text-muted-foreground">This appears in browser tabs and search results</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Site Tagline / Description *</label>
+              <div className="p-5 bg-secondary/40 rounded-lg border border-border/50 space-y-3">
+                <label className="block text-sm font-semibold text-foreground">Site Tagline / Description *</label>
                 <Textarea
                   value={siteSettings.siteTagline}
                   onChange={(e) => setSiteSettings({ ...siteSettings, siteTagline: e.target.value })}
                   placeholder="Brief description of your site"
-                  className="bg-background/50 min-h-[80px]"
+                  className="bg-background border-2 border-border/60 rounded-lg shadow-sm focus:border-primary min-h-[100px]"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Displayed on the landing page and in SEO metadata</p>
+                <p className="text-xs text-muted-foreground">Displayed on the landing page and in SEO metadata</p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Support Email Address *</label>
+              <div className="p-5 bg-secondary/40 rounded-lg border border-border/50 space-y-3">
+                <label className="block text-sm font-semibold text-foreground">Support Email Address *</label>
                 <Input
                   type="email"
                   value={siteSettings.supportEmail}
                   onChange={(e) => setSiteSettings({ ...siteSettings, supportEmail: e.target.value })}
                   placeholder="support@example.com"
-                  className="bg-background/50"
+                  className="bg-background border-2 border-border/60 rounded-lg shadow-sm focus:border-primary"
                 />
-                <p className="text-xs text-muted-foreground mt-1">Used for contact form and support communications</p>
+                <p className="text-xs text-muted-foreground">Used for contact form and support communications</p>
               </div>
             </CardContent>
           </Card>
@@ -754,9 +781,10 @@ export function SettingsPage() {
           <AdminSettings />
         </motion.div>
       )}
+      </div>
 
       {/* Save Button - Fixed at bottom */}
-      <div className="sticky bottom-0 left-0 right-0 bg-background/95 backdrop-blur-lg border-t border-border p-6 flex justify-end gap-3 z-50">
+      <div className="bg-background/95 backdrop-blur-lg border-t border-border p-4 md:p-6 flex justify-end gap-3">
         <Button 
           variant="outline"
           onClick={() => setActiveTab('author')}

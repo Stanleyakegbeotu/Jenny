@@ -207,6 +207,9 @@ CREATE POLICY "sub_select" ON subscribers FOR SELECT USING (true);
 DROP POLICY IF EXISTS "sub_update" ON subscribers;
 CREATE POLICY "sub_update" ON subscribers FOR UPDATE USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "sub_delete" ON subscribers;
+CREATE POLICY "sub_delete" ON subscribers FOR DELETE USING (true);
+
 -- ============================================================================
 -- 7. ANALYTICS EVENTS TABLE - Tracks User Engagement
 -- ============================================================================
