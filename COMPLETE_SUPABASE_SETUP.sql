@@ -274,6 +274,41 @@ DROP POLICY IF EXISTS "books_delete" ON books;
 CREATE POLICY "books_delete" ON books FOR DELETE USING (true);
 
 -- ============================================================================
+-- 8. CHAPTERS TABLE - Book Chapters/Sections
+-- ============================================================================
+DROP TABLE IF EXISTS chapters CASCADE;
+
+CREATE TABLE chapters (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  content text,
+  preview_text text,
+  chapter_number integer DEFAULT 1,
+  order integer DEFAULT 1,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX chapters_book_id_idx ON chapters(book_id);
+CREATE INDEX chapters_order_idx ON chapters(book_id, order);
+
+ALTER TABLE chapters ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "chapters_select" ON chapters;
+CREATE POLICY "chapters_select" ON chapters FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "chapters_insert" ON chapters;
+CREATE POLICY "chapters_insert" ON chapters FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "chapters_update" ON chapters;
+CREATE POLICY "chapters_update" ON chapters FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "chapters_delete" ON chapters;
+CREATE POLICY "chapters_delete" ON chapters FOR DELETE USING (true);
+
+-- ============================================================================
 -- 9. BOOK COMMENTS TABLE - Stores Book Comments/Reviews
 -- ============================================================================
 DROP TABLE IF EXISTS book_comments CASCADE;
@@ -321,7 +356,8 @@ SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORD
 -- 6. subscribers
 -- 7. analytics_events
 -- 8. books
--- 9. book_comments
+-- 9. chapters
+-- 10. book_comments
 */
 
 -- ============================================================================
