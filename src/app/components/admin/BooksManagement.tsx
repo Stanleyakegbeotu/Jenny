@@ -157,6 +157,9 @@ export function BooksManagement() {
     setError(null);
 
     try {
+      console.log('🔖 Starting book save process...');
+      console.log('📝 Form data:', formData);
+      
       let cover_url: string | null = formData.cover_url;
 
       // Upload cover if a new file was selected
@@ -231,8 +234,10 @@ export function BooksManagement() {
       setSuccess(editingBook ? 'Book updated successfully!' : 'Book created successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error saving book:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save book');
+      console.error('❌ Error saving book:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      console.error('Error details:', errorMessage);
+      setError(`Failed to save book: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }
