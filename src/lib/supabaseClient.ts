@@ -92,20 +92,15 @@ export interface AnalyticsEvent {
 // Books Functions
 export async function fetchBooks(): Promise<Book[]> {
   try {
-    console.log('📚 Fetching books from database...');
     const { data, error } = await supabase
       .from('books')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ Error fetching books:', error);
-      throw error;
-    }
-    console.log(`✅ Fetched ${data?.length || 0} books:`, data);
+    if (error) throw error;
     return data || [];
   } catch (error) {
-    console.error('❌ Exception fetching books:', error);
+    console.error('Error fetching books:', error);
     return [];
   }
 }
@@ -128,30 +123,16 @@ export async function fetchBook(id: string): Promise<Book | null> {
 
 export async function createBook(book: Omit<Book, 'id' | 'created_at' | 'updated_at'>): Promise<Book | null> {
   try {
-    console.log('📚 Creating book with data:', book);
-    
     const { data, error } = await supabase
       .from('books')
       .insert([book])
       .select()
       .single();
 
-    if (error) {
-      console.error('❌ Supabase error creating book:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Error details:', JSON.stringify(error));
-      throw error;
-    }
-    
-    console.log('✅ Book created successfully:', data);
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('❌ Exception creating book:', error);
-    if (error instanceof Error) {
-      console.error('Error stack:', error.stack);
-      console.error('Error message:', error.message);
-    }
+    console.error('Error creating book:', error);
     return null;
   }
 }
@@ -229,25 +210,16 @@ export async function fetchChapter(id: string): Promise<Chapter | null> {
 
 export async function createChapter(chapter: Omit<Chapter, 'id' | 'created_at'>): Promise<Chapter | null> {
   try {
-    console.log('📖 Creating chapter with data:', chapter);
-    
     const { data, error } = await supabase
       .from('chapters')
       .insert([chapter])
       .select()
       .single();
 
-    if (error) {
-      console.error('❌ Supabase error creating chapter:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      throw error;
-    }
-    
-    console.log('✅ Chapter created successfully:', data);
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('❌ Exception creating chapter:', error);
+    console.error('Error creating chapter:', error);
     return null;
   }
 }
