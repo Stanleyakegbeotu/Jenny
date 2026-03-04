@@ -150,6 +150,7 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
     const { data, error, status } = await supabase
       .from('author_settings')
       .select('*')
+      .eq('is_default', true)
       .single();
 
     console.log('⚙️ [getAuthorSettings] Response status:', status);
@@ -289,6 +290,7 @@ export async function upsertAuthorSettings(settings: AuthorSettings): Promise<bo
     const { data: existing, error: selectError } = await supabase
       .from('author_settings')
       .select('id')
+      .eq('is_default', true)
       .single();
 
     if (selectError && selectError.code !== 'PGRST116') {
@@ -349,6 +351,7 @@ export async function getNotificationSettings(): Promise<NotificationSettings | 
     const { data, error } = await supabase
       .from('notification_settings')
       .select('*')
+      .eq('is_default', true)
       .single();
 
     if (error) {
@@ -447,6 +450,7 @@ export async function upsertNotificationSettings(settings: NotificationSettings)
     const { data: existing, error: selectError } = await supabase
       .from('notification_settings')
       .select('id')
+      .eq('is_default', true)
       .single();
 
     if (selectError && selectError.code !== 'PGRST116') {
@@ -505,6 +509,7 @@ export async function getHeroSettings(): Promise<HeroSettings | null> {
     const { data, error, status } = await supabase
       .from('hero_settings')
       .select('*')
+      .eq('is_default', true)
       .single();
 
     console.log('🚀 [getHeroSettings] Response status:', status);
@@ -567,6 +572,7 @@ export async function upsertHeroSettings(settings: HeroSettings): Promise<boolea
     const { data: existing, error: selectError } = await supabase
       .from('hero_settings')
       .select('id')
+      .eq('is_default', true)
       .single();
 
     if (selectError && selectError.code !== 'PGRST116') {
