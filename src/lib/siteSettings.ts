@@ -280,47 +280,49 @@ export async function upsertAuthorSettings(settings: AuthorSettings): Promise<bo
 
     console.log('⚙️ [upsertAuthorSettings] Payload:', payload);
 
-    const { data, error, status } = await supabase
+    // First, try to get existing record
+    const { data: existing, error: selectError } = await supabase
       .from('author_settings')
-        .upsert(payload, { onConflict: 'is_default' })
+      .select('id')
+      .single();
+
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('❌ [upsertAuthorSettings] Error checking for existing record:', selectError);
+      return false;
+    }
+
+    let result;
+
+    if (existing && existing.id) {
+      // Update existing record
+      console.log('📝 [upsertAuthorSettings] Updating existing record:', existing.id);
+      result = await supabase
+        .from('author_settings')
+        .update(payload)
+        .eq('id', existing.id)
         .select()
         .single();
+    } else {
+      // Insert new record
+      console.log('➕ [upsertAuthorSettings] Creating new record');
+      result = await supabase
+        .from('author_settings')
+        .insert([payload])
+        .select()
+        .single();
+    }
+
+    const { data, error, status } = result;
 
     console.log('⚙️ [upsertAuthorSettings] Response status:', status);
     console.log('⚙️ [upsertAuthorSettings] Response error:', error);
 
     if (error) {
-        console.error('❌ [upsertAuthorSettings] Upsert failed:', error);
-        // If schema doesn't include is_default column, do a manual upsert (select -> insert/update)
-        if (error.code === 'PGRST204') {
-          console.warn('⚠️ [upsertAuthorSettings] Schema missing is_default, performing manual upsert');
-          // Try to find existing row
-          const { data: existing } = await supabase.from('author_settings').select('*').maybeSingle();
-          if (existing) {
-            const { error: updErr } = await supabase
-              .from('author_settings')
-              .update(payload)
-              .eq('id', existing.id);
-            if (updErr) {
-              console.error('❌ [upsertAuthorSettings] Manual update failed:', updErr);
-              return false;
-            }
-            console.log('✅ [upsertAuthorSettings] Manual update succeeded');
-            return true;
-          }
-          // Insert if none
-          const { error: insErr } = await supabase.from('author_settings').insert(payload);
-          if (insErr) {
-            console.error('❌ [upsertAuthorSettings] Manual insert failed:', insErr);
-            return false;
-          }
-          console.log('✅ [upsertAuthorSettings] Manual insert succeeded');
-          return true;
-        }
-        return false;
+      console.error('❌ [upsertAuthorSettings] Operation failed:', error);
+      return false;
     }
 
-    console.log('✅ [upsertAuthorSettings] Upserted successfully, ID:', data?.id);
+    console.log('✅ [upsertAuthorSettings] Success! ID:', data?.id);
     return true;
   } catch (err) {
     console.error('❌ [upsertAuthorSettings] Unexpected error:', err);
@@ -426,6 +428,7 @@ export async function updateNotificationSettings(
  */
 export async function upsertNotificationSettings(settings: NotificationSettings): Promise<boolean> {
   try {
+    console.log('🔔 [upsertNotificationSettings] Upserting notification settings');
     const payload: any = {
       id: settings.id,
       notify_new_subscribers: settings.notifyNewSubscribers,
@@ -435,43 +438,51 @@ export async function upsertNotificationSettings(settings: NotificationSettings)
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    // First, try to get existing record
+    const { data: existing, error: selectError } = await supabase
       .from('notification_settings')
-      .upsert(payload, { onConflict: 'is_default' })
-      .select()
+      .select('id')
       .single();
 
-    if (error) {
-      // If schema doesn't include is_default column, do manual upsert
-      if (error.code === 'PGRST204') {
-        console.warn('notification_settings schema missing is_default, performing manual upsert');
-        const { data: existing } = await supabase.from('notification_settings').select('*').maybeSingle();
-        if (existing) {
-          const { error: updErr } = await supabase
-            .from('notification_settings')
-            .update(payload)
-            .eq('id', existing.id);
-          if (updErr) {
-            console.error('Manual update failed:', updErr);
-            return false;
-          }
-          return true;
-        }
-        const { error: insErr } = await supabase.from('notification_settings').insert(payload);
-        if (insErr) {
-          console.error('Manual insert failed:', insErr);
-          return false;
-        }
-        return true;
-      }
-      console.error('Error upserting notification settings:', error);
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('❌ [upsertNotificationSettings] Error checking for existing record:', selectError);
       return false;
     }
 
-    console.log('✅ Upserted notification settings', data?.id);
+    let result;
+
+    if (existing && existing.id) {
+      // Update existing record
+      console.log('📝 [upsertNotificationSettings] Updating existing record:', existing.id);
+      result = await supabase
+        .from('notification_settings')
+        .update(payload)
+        .eq('id', existing.id)
+        .select()
+        .single();
+    } else {
+      // Insert new record
+      console.log('➕ [upsertNotificationSettings] Creating new record');
+      result = await supabase
+        .from('notification_settings')
+        .insert([payload])
+        .select()
+        .single();
+    }
+
+    const { data, error } = result;
+
+    if (error) {
+      console.error('❌ [upsertNotificationSettings] Operation failed:', error);
+      return false;
+    }
+
+    console.log('✅ [upsertNotificationSettings] Success! ID:', data?.id);
     return true;
   } catch (err) {
-    console.error('Unexpected error upserting notification settings:', err);
+    console.error('❌ [upsertNotificationSettings] Unexpected error:', err);
+    const errorMsg = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error('❌ [upsertNotificationSettings] Error details:', errorMsg);
     return false;
   }
 }
