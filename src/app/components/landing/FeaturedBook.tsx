@@ -3,8 +3,6 @@ import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, BookOpen, Users, Volume2, ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { BookAnalytics } from './BookAnalytics';
-import { BookComments } from './BookComments';
 import { fetchBooks, Book as SupabaseBook } from '../../../lib/supabaseClient';
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
@@ -18,7 +16,6 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
-  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const { isSupported: ttsSupported, isSpeaking, speak, stop } = useTextToSpeech();
   const [speakingBookId, setSpeakingBookId] = useState<string | null>(null);
 
@@ -71,13 +68,6 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
 
   const toggleDescription = (bookId: string) => {
     setExpandedDescriptions(prev => ({
-      ...prev,
-      [bookId]: !prev[bookId]
-    }));
-  };
-
-  const toggleComments = (bookId: string) => {
-    setExpandedComments(prev => ({
       ...prev,
       [bookId]: !prev[bookId]
     }));
@@ -141,7 +131,6 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
         >
           {displayedBooks.map((book, index) => {
             const isDescriptionExpanded = expandedDescriptions[book.id] || false;
-            const isCommentsExpanded = expandedComments[book.id] || false;
             const descriptionPreview = book.description?.substring(0, 150) + (book.description && book.description.length > 150 ? '...' : '');
             const displayDescription = isDescriptionExpanded ? book.description : descriptionPreview;
             const shouldShowReadMore = book.description && book.description.length > 150;
@@ -211,18 +200,6 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                     Preview Chapter One
                   </Button>
 
-                  {/* Book Analytics */}
-                  <div className="mb-4 pt-4 border-t border-border/30">
-                    <BookAnalytics
-                      bookId={book.id}
-                      totalReads={book.totalReads}
-                      clicks={book.clicks}
-                      likes={book.likes}
-                      commentCount={book.commentCount}
-                      onCommentsToggle={() => toggleComments(book.id)}
-                    />
-                  </div>
-
                   {/* External Links */}
                   {book.book_link && book.book_platform && (
                     <a
@@ -238,19 +215,6 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                   )}
                 </div>
               </motion.div>
-
-              {/* Expandable Comments Section */}
-              {isCommentsExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="mt-4"
-                >
-                  <BookComments bookId={book.id} />
-                </motion.div>
-              )}
             </div>
             );
           })}
