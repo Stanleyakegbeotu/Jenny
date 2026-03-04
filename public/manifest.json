@@ -1,8 +1,8 @@
 {
-  "name": "NENSHA JENNIFER Admin Dashboard",
-  "short_name": "NENSHA Admin",
-  "description": "Professional admin dashboard for managing books, subscribers, and analytics",
-  "start_url": "/admin",
+  "name": "NENSHA JENNIFER Books",
+  "short_name": "NENSHA Books",
+  "description": "Discover captivating romance stories from acclaimed author Jennifer Nensha",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -39,23 +39,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "description": "Access the admin dashboard",
-      "url": "/admin?mode=dashboard",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238b5cf6' width='96' height='96'/><text x='50%' y='50%' font-size='40' font-weight='bold' fill='white' text-anchor='middle' dy='.3em'>📊</text></svg>",
-          "sizes": "96x96",
-          "type": "image/svg+xml"
-        }
-      ]
-    },
-    {
-      "name": "Books Management",
+      "name": "All Books",
       "short_name": "Books",
-      "description": "Manage your books",
-      "url": "/admin?mode=books",
+      "description": "Browse all books",
+      "url": "/?section=books",
       "icons": [
         {
           "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238b5cf6' width='96' height='96'/><text x='50%' y='50%' font-size='40' font-weight='bold' fill='white' text-anchor='middle' dy='.3em'>📚</text></svg>",
@@ -65,13 +52,26 @@
       ]
     },
     {
-      "name": "Analytics",
-      "short_name": "Analytics",
-      "description": "View analytics",
-      "url": "/admin?mode=analytics",
+      "name": "About Author",
+      "short_name": "About",
+      "description": "Learn about the author",
+      "url": "/?section=about",
       "icons": [
         {
-          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238b5cf6' width='96' height='96'/><text x='50%' y='50%' font-size='40' font-weight='bold' fill='white' text-anchor='middle' dy='.3em'>📈</text></svg>",
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238b5cf6' width='96' height='96'/><text x='50%' y='50%' font-size='40' font-weight='bold' fill='white' text-anchor='middle' dy='.3em'>👤</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Subscribe",
+      "short_name": "Subscribe",
+      "description": "Join the newsletter",
+      "url": "/?section=subscribe",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><rect fill='%238b5cf6' width='96' height='96'/><text x='50%' y='50%' font-size='40' font-weight='bold' fill='white' text-anchor='middle' dy='.3em'>💌</text></svg>",
           "sizes": "96x96",
           "type": "image/svg+xml"
         }

@@ -1,10 +1,9 @@
-// Service Worker for NENSHA JENNIFER Admin Dashboard PWA
+// Service Worker for NENSHA JENNIFER Books PWA
 
-const CACHE_VERSION = 'nensha-admin-v1';
+const CACHE_VERSION = 'nensha-books-v1';
 const CACHE_URLS = [
   '/',
   '/index.html',
-  '/admin',
 ];
 
 // Install event - cache essential files

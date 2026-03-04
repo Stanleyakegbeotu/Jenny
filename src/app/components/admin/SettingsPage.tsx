@@ -73,8 +73,6 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'author' | 'reviews' | 'hero' | 'site' | 'notifications' | 'formspree'>('author');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // Author Settings
   const [authorSettings, setAuthorSettings] = useState<AuthorSettings>({
@@ -212,30 +210,6 @@ export function SettingsPage() {
     }
   };
 
-  // Swipe handler for mobile tab navigation
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    setTouchEnd(e.changedTouches[0].clientX);
-    
-    if (touchStart === null || !touchEnd) return;
-
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 50; // Swipe left to go to next tab
-    const isRightSwipe = distance < -50; // Swipe right to go to previous tab
-
-    const tabIds = ['author', 'reviews', 'hero', 'site', 'notifications', 'formspree'];
-    const currentIndex = tabIds.indexOf(activeTab);
-
-    if (isLeftSwipe && currentIndex < tabIds.length - 1) {
-      setActiveTab(tabIds[currentIndex + 1] as any);
-    } else if (isRightSwipe && currentIndex > 0) {
-      setActiveTab(tabIds[currentIndex - 1] as any);
-    }
-  };
-
   const tabs = [
     { id: 'author', label: 'Author Profile', icon: '👤' },
     { id: 'reviews', label: 'Reader Reviews', icon: '⭐' },
@@ -246,7 +220,7 @@ export function SettingsPage() {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+    <div className="flex flex-col min-h-screen">
       <div className="flex-1 space-y-6 overflow-y-auto">
         {/* Header */}
         <div>
