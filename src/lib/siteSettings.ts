@@ -141,16 +141,21 @@ export async function updateFormspreeUrl(url: string): Promise<boolean> {
  */
 export async function getAuthorSettings(): Promise<AuthorSettings | null> {
   try {
-    const { data, error } = await supabase
+    console.log('⚙️ [getAuthorSettings] Fetching author settings from Supabase...');
+    const { data, error, status } = await supabase
       .from('author_settings')
       .select('*')
       .single();
 
+    console.log('⚙️ [getAuthorSettings] Response status:', status);
+    console.log('⚙️ [getAuthorSettings] Response error:', error);
+    console.log('⚙️ [getAuthorSettings] Data retrieved:', !!data);
+
     if (error) {
-      console.error('Error fetching author settings:', error);
+      console.error('❌ [getAuthorSettings] Query failed:', error);
       // If no row exists, create one with defaults
       if (error.code === 'PGRST116') {
-        console.log('No author settings found, creating default row...');
+        console.log('📝 [getAuthorSettings] No author settings found, creating default row...');
         const insertResult = await supabase
           .from('author_settings')
           .insert({
@@ -165,10 +170,11 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
           .single();
 
         if (insertResult.error) {
-          console.error('Failed to create default author settings:', insertResult.error);
+          console.error('❌ [getAuthorSettings] Failed to create default:', insertResult.error);
           return null;
         }
 
+        console.log('✅ [getAuthorSettings] Default settings created with ID:', insertResult.data?.id);
         return {
           id: insertResult.data?.id,
           name: insertResult.data?.name || 'Jennifer Nensha',
@@ -187,6 +193,7 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
       return null;
     }
 
+    console.log('✅ [getAuthorSettings] Settings loaded successfully');
     return {
       id: data?.id,
       name: data?.name || 'Jennifer Nensha',
@@ -202,7 +209,7 @@ export async function getAuthorSettings(): Promise<AuthorSettings | null> {
       reviews: data?.reviews || [],
     };
   } catch (err) {
-    console.error('Unexpected error fetching author settings:', err);
+    console.error('❌ [getAuthorSettings] Unexpected error:', err);
     return null;
   }
 }
@@ -253,6 +260,7 @@ export async function updateAuthorSettings(settings: AuthorSettings): Promise<bo
  */
 export async function upsertAuthorSettings(settings: AuthorSettings): Promise<boolean> {
   try {
+    console.log('⚙️ [upsertAuthorSettings] Upserting author settings:', settings.name);
     const payload: any = {
       id: settings.id,
       name: settings.name,
@@ -270,16 +278,22 @@ export async function upsertAuthorSettings(settings: AuthorSettings): Promise<bo
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    console.log('⚙️ [upsertAuthorSettings] Payload:', payload);
+
+    const { data, error, status } = await supabase
       .from('author_settings')
         .upsert(payload, { onConflict: 'is_default' })
         .select()
         .single();
 
+    console.log('⚙️ [upsertAuthorSettings] Response status:', status);
+    console.log('⚙️ [upsertAuthorSettings] Response error:', error);
+
     if (error) {
+        console.error('❌ [upsertAuthorSettings] Upsert failed:', error);
         // If schema doesn't include is_default column, do a manual upsert (select -> insert/update)
         if (error.code === 'PGRST204') {
-          console.warn('author_settings schema missing is_default, performing manual upsert');
+          console.warn('⚠️ [upsertAuthorSettings] Schema missing is_default, performing manual upsert');
           // Try to find existing row
           const { data: existing } = await supabase.from('author_settings').select('*').maybeSingle();
           if (existing) {
@@ -288,27 +302,30 @@ export async function upsertAuthorSettings(settings: AuthorSettings): Promise<bo
               .update(payload)
               .eq('id', existing.id);
             if (updErr) {
-              console.error('Manual update failed:', updErr);
+              console.error('❌ [upsertAuthorSettings] Manual update failed:', updErr);
               return false;
             }
+            console.log('✅ [upsertAuthorSettings] Manual update succeeded');
             return true;
           }
           // Insert if none
           const { error: insErr } = await supabase.from('author_settings').insert(payload);
           if (insErr) {
-            console.error('Manual insert failed:', insErr);
+            console.error('❌ [upsertAuthorSettings] Manual insert failed:', insErr);
             return false;
           }
+          console.log('✅ [upsertAuthorSettings] Manual insert succeeded');
           return true;
         }
-        console.error('Error upserting author settings:', error);
         return false;
     }
 
-    console.log('✅ Upserted author settings', data?.id);
+    console.log('✅ [upsertAuthorSettings] Upserted successfully, ID:', data?.id);
     return true;
   } catch (err) {
-    console.error('Unexpected error upserting author settings:', err);
+    console.error('❌ [upsertAuthorSettings] Unexpected error:', err);
+    const errorMsg = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error('❌ [upsertAuthorSettings] Error details:', errorMsg);
     return false;
   }
 }

@@ -60,11 +60,14 @@ export function BooksManagement() {
   const loadBooks = async () => {
     try {
       setLoading(true);
+      console.log('📚 Loading books from Supabase...');
       const data = await fetchBooks();
+      console.log('📚 Books loaded:', data);
+      console.log('📊 Total books fetched:', data.length);
       setBooks(data);
       setError(null);
     } catch (err) {
-      console.error('Error loading books:', err);
+      console.error('❌ Error loading books:', err);
       setError('Failed to load books');
     } finally {
       setLoading(false);
@@ -157,14 +160,19 @@ export function BooksManagement() {
     setError(null);
 
     try {
+      console.log('📚 Starting book save process...');
+      console.log('📝 Form data:', formData);
+      
       let cover_url: string | null = formData.cover_url;
 
       // Upload cover if a new file was selected
       if (coverFile) {
+        console.log('📤 Uploading cover image...');
         cover_url = await uploadCover(coverFile, editingBook?.id || Date.now().toString());
         if (!cover_url) {
           throw new Error('Failed to upload cover image');
         }
+        console.log('✅ Cover uploaded:', cover_url);
       }
 
       const bookData = {
@@ -175,8 +183,11 @@ export function BooksManagement() {
         ...(formData.book_platform && { book_platform: formData.book_platform }),
       };
 
+      console.log('📚 Book data to save:', bookData);
+
       if (editingBook) {
         // Update existing book
+        console.log('✏️ Updating book:', editingBook.id);
         const updated = await updateBook(editingBook.id, bookData);
         if (!updated) {
           throw new Error('Failed to update book');
@@ -207,13 +218,21 @@ export function BooksManagement() {
         }
       } else {
         // Create new book
+        console.log('➕ Creating new book in Supabase...');
         const created = await createBook(bookData);
+        console.log('📚 Book creation result:', created);
+        
         if (!created) {
-          throw new Error('Failed to create book. Please check the console for details.');
+          console.error('❌ createBook returned null');
+          throw new Error('Failed to create book. The database rejected it. Check browser console for Supabase error logs.');
         }
+        
+        console.log('✅ Book created with ID:', created.id);
+        console.log('📚 Updating local books list...');
         setBooks([created, ...books]);
         
         // Create chapter 1
+        console.log('📖 Creating Chapter 1 for book:', created.id);
         const chapterCreated = await createChapter({
           book_id: created.id,
           title: 'Chapter 1',
@@ -221,7 +240,10 @@ export function BooksManagement() {
           chapter_number: 1,
         });
         
+        console.log('📖 Chapter creation result:', chapterCreated);
+        
         if (!chapterCreated) {
+          console.error('❌ Chapter creation failed');
           throw new Error('Failed to create chapter. The book was created, but chapter content could not be saved.');
         }
       }
@@ -229,10 +251,17 @@ export function BooksManagement() {
       setIsModalOpen(false);
       resetForm();
       setSuccess(editingBook ? 'Book updated successfully!' : 'Book created successfully!');
+      console.log('✅ Success message set');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      console.error('Error saving book:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save book');
+      console.error('❌ Error saving book:', err);
+      const errorMessage = err instanceof Error ? err.message : JSON.stringify(err);
+      console.error('❌ Full error details:', {
+        errorType: typeof err,
+        errorMessage,
+        errorStack: err instanceof Error ? err.stack : 'N/A'
+      });
+      setError(`Failed to save book: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }

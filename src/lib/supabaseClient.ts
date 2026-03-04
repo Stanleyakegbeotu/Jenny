@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log('🔌 [Supabase Init] URL configured:', !!supabaseUrl);
+console.log('🔌 [Supabase Init] Anon key configured:', !!supabaseAnonKey);
+console.log('🔌 [Supabase Init] URL:', supabaseUrl);
+
 const hasSupabaseConfig = !!(supabaseUrl && supabaseAnonKey);
 
 if (!hasSupabaseConfig) {
@@ -13,6 +17,17 @@ if (!hasSupabaseConfig) {
 
 // Create real Supabase client
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+
+// Test connection
+supabase.from('books').select('count')
+  .then(({ data, error }) => {
+    if (error) {
+      console.error('❌ [Supabase Init] Connection test failed:', error);
+    } else {
+      console.log('✅ [Supabase Init] Connected successfully! Can access books table');
+    }
+  })
+  .catch(err => console.error('❌ [Supabase Init] Connection test error:', err));
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -92,15 +107,24 @@ export interface AnalyticsEvent {
 // Books Functions
 export async function fetchBooks(): Promise<Book[]> {
   try {
-    const { data, error } = await supabase
+    console.log('📚 [fetchBooks] Starting fetch from books table...');
+    const { data, error, status } = await supabase
       .from('books')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    console.log('📚 [fetchBooks] Response status:', status);
+    console.log('📚 [fetchBooks] Response error:', error);
+    console.log('📚 [fetchBooks] Books found:', data?.length || 0);
+
+    if (error) {
+      console.error('❌ [fetchBooks] Query failed:', error);
+      throw error;
+    }
+    console.log('✅ [fetchBooks] Returning', data?.length || 0, 'books');
     return data || [];
   } catch (error) {
-    console.error('Error fetching books:', error);
+    console.error('❌ [fetchBooks] Exception:', error);
     return [];
   }
 }
@@ -123,16 +147,29 @@ export async function fetchBook(id: string): Promise<Book | null> {
 
 export async function createBook(book: Omit<Book, 'id' | 'created_at' | 'updated_at'>): Promise<Book | null> {
   try {
-    const { data, error } = await supabase
+    console.log('📚 [createBook] Starting book creation with data:', book);
+    
+    const { data, error, status } = await supabase
       .from('books')
       .insert([book])
       .select()
       .single();
 
-    if (error) throw error;
+    console.log('📚 [createBook] Response status:', status);
+    console.log('📚 [createBook] Response data:', data);
+    console.log('📚 [createBook] Response error:', error);
+    
+    if (error) {
+      console.error('❌ [createBook] Insert failed with error:', error);
+      throw error;
+    }
+    
+    console.log('✅ [createBook] Book created successfully:', data?.id);
     return data;
   } catch (error) {
-    console.error('Error creating book:', error);
+    console.error('❌ [createBook] Exception caught:', error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error('❌ [createBook] Error details:', errorMsg);
     return null;
   }
 }
@@ -210,16 +247,30 @@ export async function fetchChapter(id: string): Promise<Chapter | null> {
 
 export async function createChapter(chapter: Omit<Chapter, 'id' | 'created_at'>): Promise<Chapter | null> {
   try {
-    const { data, error } = await supabase
+    console.log('📖 [createChapter] Starting chapter creation for book:', chapter.book_id);
+    console.log('📖 [createChapter] Chapter data:', chapter);
+    
+    const { data, error, status } = await supabase
       .from('chapters')
       .insert([chapter])
       .select()
       .single();
 
-    if (error) throw error;
+    console.log('📖 [createChapter] Response status:', status);
+    console.log('📖 [createChapter] Response data:', data);
+    console.log('📖 [createChapter] Response error:', error);
+    
+    if (error) {
+      console.error('❌ [createChapter] Insert failed:', error);
+      throw error;
+    }
+    
+    console.log('✅ [createChapter] Chapter created successfully:', data?.id);
     return data;
   } catch (error) {
-    console.error('Error creating chapter:', error);
+    console.error('❌ [createChapter] Exception caught:', error);
+    const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error('❌ [createChapter] Error details:', errorMsg);
     return null;
   }
 }
