@@ -5,6 +5,7 @@ import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../../hooks/useI18n';
 import { trackExternalLink } from '../../../lib/analytics';
+import { getHeroSettings } from '../../../lib/siteSettings';
 
 interface PlatformLink {
   name: string;
@@ -83,25 +84,33 @@ export function HeroSection() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        // Load from Supabase site_settings_extended table
-        const { data, error } = await (await import('../../../lib/supabaseClient')).supabase
-          .from('site_settings_extended')
-          .select('hero_image')
-          .single();
-
-        if (!error && data) {
+        console.log('🚀 [HeroSection] Fetching hero settings from database...');
+        const heroSettings = await getHeroSettings();
+        
+        if (heroSettings) {
+          console.log('✅ [HeroSection] Hero settings loaded');
           setSiteSettings({
-            heroImage: data.hero_image,
-            platformLinks: [], // Placeholder - will add platform links to admin soon
+            heroImage: heroSettings.heroImage,
+            platformLinks: [],
           });
         }
       } catch (error) {
-        console.error('Error loading site settings from Supabase:', error);
+        console.error('❌ [HeroSection] Error loading hero settings from Supabase:', error);
         // Fall back to empty defaults
       }
     };
 
+    // Load settings immediately
     loadSettings();
+
+    // Refresh hero settings every 30 seconds so visitors see admin updates in real-time
+    const interval = setInterval(() => {
+      console.log('🔄 [HeroSection] Periodic refresh of hero settings...');
+      loadSettings();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   const handlePlatformLink = (platform: string, url?: string) => {

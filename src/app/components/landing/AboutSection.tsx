@@ -21,8 +21,10 @@ export function AboutSection() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        console.log('🔄 [AboutSection] Fetching author settings from database...');
         const settings = await getAuthorSettingsFromDB();
         if (settings) {
+          console.log('✅ [AboutSection] Settings loaded:', settings.name);
           setAuthorSettings({
             name: settings.name || 'NENSHA JENNIFER',
             bio: settings.bio || '',
@@ -42,7 +44,7 @@ export function AboutSection() {
           });
         }
       } catch (error) {
-        console.error('Error loading author settings:', error);
+        console.error('❌ [AboutSection] Error loading author settings:', error);
         // Set default values on error
         setAuthorSettings({
           name: 'NENSHA JENNIFER',
@@ -53,7 +55,18 @@ export function AboutSection() {
         });
       }
     };
+
+    // Load settings immediately
     loadSettings();
+
+    // Refresh settings every 30 seconds so visitors see admin updates in real-time
+    const interval = setInterval(() => {
+      console.log('🔄 [AboutSection] Periodic refresh of author settings...');
+      loadSettings();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   // Format numbers for display

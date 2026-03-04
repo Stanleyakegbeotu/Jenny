@@ -16,11 +16,13 @@ export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseB
     async function loadBooks() {
       try {
         setLoading(true);
+        console.log('📚 [BooksGrid] Fetching books from database...');
         const data = await fetchBooks();
+        console.log('✅ [BooksGrid] Loaded', data.length, 'books');
         setBooks(data);
         setError(null);
       } catch (err) {
-        console.error('Error loading books:', err);
+        console.error('❌ [BooksGrid] Error loading books:', err);
         setBooks([]);
         setError('Unable to load books');
       } finally {
@@ -28,7 +30,17 @@ export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseB
       }
     }
 
+    // Load books immediately
     loadBooks();
+
+    // Refresh books every 30 seconds so visitors see admin updates in real-time
+    const interval = setInterval(() => {
+      console.log('🔄 [BooksGrid] Periodic refresh of books...');
+      loadBooks();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   return (

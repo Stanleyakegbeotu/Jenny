@@ -25,18 +25,30 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
   useEffect(() => {
     async function loadBooks() {
       try {
+        console.log('📚 [FeaturedBook] Fetching featured books from database...');
         const fetchedBooks = await fetchBooks();
+        console.log('✅ [FeaturedBook] Loaded', fetchedBooks.length, 'featured books');
         setBooks(fetchedBooks);
         setCurrentPage(0);
       } catch (error) {
-        console.error('Error loading featured books:', error);
+        console.error('❌ [FeaturedBook] Error loading featured books:', error);
         setBooks([]);
       } finally {
         setLoading(false);
       }
     }
 
+    // Load books immediately
     loadBooks();
+
+    // Refresh featured books every 30 seconds so visitors see admin updates in real-time
+    const interval = setInterval(() => {
+      console.log('🔄 [FeaturedBook] Periodic refresh of featured books...');
+      loadBooks();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

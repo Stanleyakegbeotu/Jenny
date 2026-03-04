@@ -13,8 +13,11 @@ import {
   getNotificationSettings as getNotificationSettingsFromDB,
   updateNotificationSettings as updateNotificationSettingsInDB,
   upsertNotificationSettings as upsertNotificationSettingsInDB,
+  getHeroSettings as getHeroSettingsFromDB,
+  upsertHeroSettings as upsertHeroSettingsInDB,
   AuthorSettings as DBAuthorSettings,
   NotificationSettings as DBNotificationSettings,
+  HeroSettings as DBHeroSettings,
 } from '../../../lib/siteSettings';
 import {
   getTotalReadsCount,
@@ -107,9 +110,10 @@ export function SettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [author, notifications] = await Promise.all([
+        const [author, notifications, hero] = await Promise.all([
           getAuthorSettingsFromDB(),
           getNotificationSettingsFromDB(),
+          getHeroSettingsFromDB(),
         ]);
 
         if (author) {
@@ -137,8 +141,19 @@ export function SettingsPage() {
             notifyBookViews: notifications.notifyBookViews,
           });
         }
+
+        if (hero) {
+          console.log('🚀 [SettingsPage] Hero settings loaded:', hero);
+          setSiteSettings({
+            siteTitle: 'Nensha Jennifer - Romance Author',
+            siteTagline: 'Discover captivating romance stories from acclaimed author Jennifer Nensha',
+            supportEmail: 'support@jennifernens.com',
+            heroImage: hero.heroImage || '',
+            platformLinks: [],
+          });
+        }
       } catch (err) {
-        console.error('Error loading settings from Supabase:', err);
+        console.error('❌ [SettingsPage] Error loading settings from Supabase:', err);
       }
     };
 
@@ -173,21 +188,25 @@ export function SettingsPage() {
   const handleSaveSettings = async () => {
     setSaveState('saving');
     try {
-      // Upsert author and notification settings to Supabase (insert if missing)
+      // Upsert author, notification, and hero settings to Supabase (insert if missing)
       const authorResult = await upsertAuthorSettingsInDB(authorSettings as unknown as DBAuthorSettings);
       const notificationResult = await upsertNotificationSettingsInDB(
         notificationSettings as unknown as DBNotificationSettings
       );
+      const heroResult = await upsertHeroSettingsInDB({
+        id: siteSettings.heroImage ? 'default' : undefined,
+        heroImage: siteSettings.heroImage,
+      } as unknown as DBHeroSettings);
 
-      if (authorResult && notificationResult) {
-        console.log('✅ Settings upserted to Supabase successfully');
+      if (authorResult && notificationResult && heroResult) {
+        console.log('✅ [SettingsPage] All settings upserted to Supabase successfully');
         setSaveState('success');
         setTimeout(() => setSaveState('idle'), 3000);
       } else {
         throw new Error('Failed to save one or more settings');
       }
     } catch (err) {
-      console.error('❌ Error saving settings:', err);
+      console.error('❌ [SettingsPage] Error saving settings:', err);
       setSaveState('error');
       setTimeout(() => setSaveState('idle'), 3000);
     }

@@ -16,17 +16,29 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
   useEffect(() => {
     async function loadBooks() {
       try {
+        console.log('📚 [FeaturedBooksGrid] Fetching featured books from database...');
         const fetchedBooks = await fetchBooks();
+        console.log('✅ [FeaturedBooksGrid] Loaded', fetchedBooks.length, 'featured books');
         setBooks(fetchedBooks);
         setCurrentPage(0);
       } catch (error) {
-        console.error('Error loading books:', error);
+        console.error('❌ [FeaturedBooksGrid] Error loading books:', error);
       } finally {
         setLoading(false);
       }
     }
 
+    // Load books immediately
     loadBooks();
+
+    // Refresh featured books every 30 seconds so visitors see admin updates in real-time
+    const interval = setInterval(() => {
+      console.log('🔄 [FeaturedBooksGrid] Periodic refresh of featured books...');
+      loadBooks();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

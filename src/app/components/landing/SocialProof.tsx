@@ -24,16 +24,29 @@ export function SocialProof() {
   useEffect(() => {
     const loadReviews = async () => {
       try {
+        console.log('⭐ [SocialProof] Fetching reviews from author settings...');
         const authorSettings = await getAuthorSettingsFromDB();
         if (authorSettings && authorSettings.reviews && Array.isArray(authorSettings.reviews)) {
+          console.log('✅ [SocialProof] Loaded', authorSettings.reviews.length, 'reviews');
           setReviews(authorSettings.reviews);
           setCurrentPage(0);
         }
       } catch (error) {
-        console.error('Error loading reviews:', error);
+        console.error('❌ [SocialProof] Error loading reviews:', error);
       }
     };
+
+    // Load reviews immediately
     loadReviews();
+
+    // Refresh reviews every 30 seconds so visitors see admin updates in real-time
+    const interval = setInterval(() => {
+      console.log('🔄 [SocialProof] Periodic refresh of reviews...');
+      loadReviews();
+    }, 30000);
+
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
   }, []);
 
   if (reviews.length === 0) {

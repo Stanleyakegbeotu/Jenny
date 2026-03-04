@@ -37,6 +37,11 @@ export interface NotificationSettings {
   notifyBookViews: boolean;
 }
 
+export interface HeroSettings {
+  id?: string;
+  heroImage?: string;
+}
+
 /**
  * Get a specific setting by key
  */
@@ -483,6 +488,129 @@ export async function upsertNotificationSettings(settings: NotificationSettings)
     console.error('❌ [upsertNotificationSettings] Unexpected error:', err);
     const errorMsg = err instanceof Error ? err.message : JSON.stringify(err);
     console.error('❌ [upsertNotificationSettings] Error details:', errorMsg);
+    return false;
+  }
+}
+
+// ============================================================================
+// HERO SETTINGS
+// ============================================================================
+
+/**
+ * Get hero settings from Supabase
+ */
+export async function getHeroSettings(): Promise<HeroSettings | null> {
+  try {
+    console.log('🚀 [getHeroSettings] Fetching hero settings from Supabase...');
+    const { data, error, status } = await supabase
+      .from('hero_settings')
+      .select('*')
+      .single();
+
+    console.log('🚀 [getHeroSettings] Response status:', status);
+    console.log('🚀 [getHeroSettings] Response error:', error);
+
+    if (error) {
+      console.error('❌ [getHeroSettings] Query failed:', error);
+      // If no row exists, create one with defaults
+      if (error.code === 'PGRST116') {
+        console.log('📝 [getHeroSettings] No hero settings found, creating default row...');
+        const insertResult = await supabase
+          .from('hero_settings')
+          .insert({
+            hero_image: '',
+          })
+          .select()
+          .single();
+
+        if (insertResult.error) {
+          console.error('❌ [getHeroSettings] Failed to create default:', insertResult.error);
+          return null;
+        }
+
+        console.log('✅ [getHeroSettings] Default settings created with ID:', insertResult.data?.id);
+        return {
+          id: insertResult.data?.id,
+          heroImage: insertResult.data?.hero_image,
+        };
+      }
+      return null;
+    }
+
+    console.log('✅ [getHeroSettings] Settings loaded successfully');
+    return {
+      id: data?.id,
+      heroImage: data?.hero_image,
+    };
+  } catch (err) {
+    console.error('❌ [getHeroSettings] Unexpected error:', err);
+    return null;
+  }
+}
+
+/**
+ * Upsert hero settings (insert if missing, update if exists)
+ */
+export async function upsertHeroSettings(settings: HeroSettings): Promise<boolean> {
+  try {
+    console.log('🚀 [upsertHeroSettings] Upserting hero settings');
+    const payload: any = {
+      id: settings.id,
+      hero_image: settings.heroImage || '',
+      is_default: true,
+      updated_at: new Date().toISOString(),
+    };
+
+    console.log('🚀 [upsertHeroSettings] Payload size:', JSON.stringify(payload).length, 'bytes');
+
+    // First, try to get existing record
+    const { data: existing, error: selectError } = await supabase
+      .from('hero_settings')
+      .select('id')
+      .single();
+
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.error('❌ [upsertHeroSettings] Error checking for existing record:', selectError);
+      return false;
+    }
+
+    let result;
+
+    if (existing && existing.id) {
+      // Update existing record
+      console.log('📝 [upsertHeroSettings] Updating existing record:', existing.id);
+      result = await supabase
+        .from('hero_settings')
+        .update(payload)
+        .eq('id', existing.id)
+        .select()
+        .single();
+    } else {
+      // Insert new record
+      console.log('➕ [upsertHeroSettings] Creating new record');
+      result = await supabase
+        .from('hero_settings')
+        .insert([payload])
+        .select()
+        .single();
+    }
+
+    const { data, error, status } = result;
+
+    console.log('🚀 [upsertHeroSettings] Response status:', status);
+    console.log('🚀 [upsertHeroSettings] Response error:', error);
+
+    if (error) {
+      console.error('❌ [upsertHeroSettings] Operation failed:', error);
+      return false;
+    }
+
+    console.log('✅ [upsertHeroSettings] Success! ID:', data?.id);
+    return true;
+  } catch (err) {
+    console.error('❌ [upsertHeroSettings] Unexpected error:', err);
+    const errorMsg = err instanceof Error ? err.message : JSON.stringify(err);
+    console.error('❌ [upsertHeroSettings] Error details:', errorMsg);
     return false;
   }
 }
