@@ -19,15 +19,15 @@ if (!hasSupabaseConfig) {
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
 // Test connection
-supabase.from('books').select('count')
-  .then(({ data, error }) => {
+Promise.resolve(supabase.from('books').select('count'))
+  .then(({ data, error }: { data: any; error: any }) => {
     if (error) {
       console.error('❌ [Supabase Init] Connection test failed:', error);
     } else {
       console.log('✅ [Supabase Init] Connected successfully! Can access books table');
     }
   })
-  .catch(err => console.error('❌ [Supabase Init] Connection test error:', err));
+  .catch((err: any) => console.error('❌ [Supabase Init] Connection test error:', err));
 
 // ============================================================================
 // TYPE DEFINITIONS
