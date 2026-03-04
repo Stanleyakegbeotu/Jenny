@@ -4,15 +4,15 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { LandingPage } from './pages/LandingPage';
 import { AdminDashboard } from './pages/AdminDashboard';
-import { LoadingPage } from './components/LoadingPage';
+import { SplashScreen } from './components/SplashScreen';
 
 export default function App() {
-  const [showLoading, setShowLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
-    // Show loading screen for 3 seconds on initial app boot only
+    // Show splash screen for 3 seconds on initial app boot only
     const timer = setTimeout(() => {
-      setShowLoading(false);
+      setShowSplash(false);
     }, 3000);
 
     return () => clearTimeout(timer);
@@ -22,7 +22,7 @@ export default function App() {
     <Router>
       <ThemeProvider>
         <LanguageProvider>
-          {showLoading && <LoadingPage />}
+          {showSplash && <SplashScreen />}
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/admin" element={<AdminDashboard />} />

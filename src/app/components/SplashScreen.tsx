@@ -1,6 +1,12 @@
 import { motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 
+/**
+ * SplashScreen Component
+ * Displays a premium animated splash screen when the app first boots
+ * Shows for 3 seconds before transitioning to the main app
+ * Used when opening the PWA from a device
+ */
 export function SplashScreen() {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -102,7 +108,7 @@ export function SplashScreen() {
           </div>
         </motion.div>
 
-        {/* Main title - character by character */}
+        {/* Main title */}
         <div className="space-y-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
