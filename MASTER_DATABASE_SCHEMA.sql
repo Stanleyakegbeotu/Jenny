@@ -123,7 +123,7 @@ CREATE POLICY "subscribers_delete_policy" ON subscribers
   FOR DELETE USING (true);
 
 -- Indexes for subscribers
-CREATE INDEX idx_subscribers_email ON subscribers(email UNIQUE);
+CREATE UNIQUE INDEX idx_subscribers_email ON subscribers(email);
 CREATE INDEX idx_subscribers_is_active ON subscribers(is_active);
 
 -- Grant permissions
