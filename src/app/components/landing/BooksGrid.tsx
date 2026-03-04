@@ -6,6 +6,7 @@ import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { fetchBooks, fetchChapters, Book as SupabaseBook } from '../../../lib/supabaseClient';
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
+import { subscribeToPublish } from '../../../lib/publishManager';
 
 export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseBook) => void }) {
   const [books, setBooks] = useState<SupabaseBook[]>([]);
@@ -33,14 +34,25 @@ export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseB
     // Load books immediately
     loadBooks();
 
+    // Subscribe to publish events for instant updates
+    const unsubscribe = subscribeToPublish((event) => {
+      if (event.type === 'full-refresh') {
+        console.log('📢 [BooksGrid] Received publish event, refreshing books...');
+        loadBooks();
+      }
+    });
+
     // Refresh books every 30 seconds so visitors see admin updates in real-time
     const interval = setInterval(() => {
       console.log('🔄 [BooksGrid] Periodic refresh of books...');
       loadBooks();
     }, 30000);
 
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
+    // Cleanup interval and subscription on unmount
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
   return (

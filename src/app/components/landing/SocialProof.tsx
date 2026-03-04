@@ -4,6 +4,7 @@ import { Star, Quote, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useI18n } from '../../../hooks/useI18n';
 import { getAuthorSettings as getAuthorSettingsFromDB } from '../../../lib/siteSettings';
+import { subscribeToPublish } from '../../../lib/publishManager';
 
 interface Review {
   id: string;
@@ -39,14 +40,25 @@ export function SocialProof() {
     // Load reviews immediately
     loadReviews();
 
+    // Subscribe to publish events for instant updates
+    const unsubscribe = subscribeToPublish((event) => {
+      if (event.type === 'full-refresh') {
+        console.log('📢 [SocialProof] Received publish event, refreshing reviews...');
+        loadReviews();
+      }
+    });
+
     // Refresh reviews every 30 seconds so visitors see admin updates in real-time
     const interval = setInterval(() => {
       console.log('🔄 [SocialProof] Periodic refresh of reviews...');
       loadReviews();
     }, 30000);
 
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
+    // Cleanup interval and subscription on unmount
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
   if (reviews.length === 0) {

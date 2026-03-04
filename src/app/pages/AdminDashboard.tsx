@@ -6,18 +6,20 @@ import { BooksManagement } from '../components/admin/BooksManagement';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
 import { SubscribersManagement } from '../components/admin/SubscribersManagement';
 import { SettingsPage } from '../components/admin/SettingsPage';
-import { Moon, Sun, Menu, Download, Bell, X } from 'lucide-react';
+import { Moon, Sun, Menu, Download, Bell, X, Send } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { useTheme } from '../contexts/ThemeContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { useAppBadge } from '../../hooks/useAppBadge';
 import { fetchBooks, fetchSubscribers } from '../../lib/supabaseClient';
+import { publishChanges } from '../../lib/publishManager';
 
 export function AdminDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth < 1024);
+  const [isPublishing, setIsPublishing] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { badgeCount, incrementBadge, clearBadge } = useAppBadge();
@@ -71,6 +73,19 @@ export function AdminDashboard() {
 
     return () => clearInterval(interval);
   }, [incrementBadge]);
+
+  // Handle publish changes
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      await publishChanges('full-refresh', 'Admin published changes');
+      // Show brief indication
+      setTimeout(() => setIsPublishing(false), 500);
+    } catch (error) {
+      console.error('Error publishing changes:', error);
+      setIsPublishing(false);
+    }
+  };
 
   // Extract current page from URL path
   const getCurrentPage = () => {
@@ -166,6 +181,17 @@ export function AdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="gap-2"
+                title="Publish changes to all users"
+              >
+                <Send className="w-4 h-4" />
+                <span className="hidden sm:inline">Publish</span>
+              </Button>
               <Button 
                 variant="ghost" 
                 size="icon"

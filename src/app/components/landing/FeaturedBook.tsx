@@ -7,6 +7,7 @@ import { fetchBooks, Book as SupabaseBook } from '../../../lib/supabaseClient';
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
 import { useI18n } from '../../../hooks/useI18n';
+import { subscribeToPublish } from '../../../lib/publishManager';
 
 const FEATURED_BOOKS_PER_PAGE = 3;
 
@@ -38,14 +39,25 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
     // Load books immediately
     loadBooks();
 
+    // Subscribe to publish events for instant updates
+    const unsubscribe = subscribeToPublish((event) => {
+      if (event.type === 'full-refresh') {
+        console.log('📢 [FeaturedBook] Received publish event, refreshing featured books...');
+        loadBooks();
+      }
+    });
+
     // Refresh featured books every 30 seconds so visitors see admin updates in real-time
     const interval = setInterval(() => {
       console.log('🔄 [FeaturedBook] Periodic refresh of featured books...');
       loadBooks();
     }, 30000);
 
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
+    // Cleanup interval and subscription on unmount
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
   if (loading) {

@@ -6,6 +6,7 @@ import { ChevronDown, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../../hooks/useI18n';
 import { trackExternalLink } from '../../../lib/analytics';
 import { getHeroSettings } from '../../../lib/siteSettings';
+import { subscribeToPublish } from '../../../lib/publishManager';
 
 interface PlatformLink {
   name: string;
@@ -103,14 +104,25 @@ export function HeroSection() {
     // Load settings immediately
     loadSettings();
 
+    // Subscribe to publish events for instant updates
+    const unsubscribe = subscribeToPublish((event) => {
+      if (event.type === 'full-refresh') {
+        console.log('📢 [HeroSection] Received publish event, refreshing hero settings...');
+        loadSettings();
+      }
+    });
+
     // Refresh hero settings every 30 seconds so visitors see admin updates in real-time
     const interval = setInterval(() => {
       console.log('🔄 [HeroSection] Periodic refresh of hero settings...');
       loadSettings();
     }, 30000);
 
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
+    // Cleanup interval and subscription on unmount
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
   const handlePlatformLink = (platform: string, url?: string) => {

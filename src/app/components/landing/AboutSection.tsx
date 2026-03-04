@@ -4,6 +4,7 @@ import { BookOpen, Users, Heart } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useI18n } from '../../../hooks/useI18n';
 import { getAuthorSettings as getAuthorSettingsFromDB } from '../../../lib/siteSettings';
+import { subscribeToPublish } from '../../../lib/publishManager';
 
 interface AuthorSettings {
   name: string;
@@ -59,14 +60,25 @@ export function AboutSection() {
     // Load settings immediately
     loadSettings();
 
+    // Subscribe to publish events for instant updates
+    const unsubscribe = subscribeToPublish((event) => {
+      if (event.type === 'full-refresh') {
+        console.log('📢 [AboutSection] Received publish event, refreshing author settings...');
+        loadSettings();
+      }
+    });
+
     // Refresh settings every 30 seconds so visitors see admin updates in real-time
     const interval = setInterval(() => {
       console.log('🔄 [AboutSection] Periodic refresh of author settings...');
       loadSettings();
     }, 30000);
 
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
+    // Cleanup interval and subscription on unmount
+    return () => {
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
   // Format numbers for display
