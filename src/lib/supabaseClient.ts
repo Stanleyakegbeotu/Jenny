@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getVisitorId } from './visitorId';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -17,6 +18,10 @@ if (!hasSupabaseConfig) {
 
 // Create real Supabase client
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+
+function resolveVisitorId(userId?: string): string {
+  return userId || getVisitorId();
+}
 
 // Test connection
 Promise.resolve(supabase.from('books').select('count'))
@@ -952,8 +957,9 @@ export async function replyToComment(
   }
 }
 
-export async function likeBook(bookId: string, userId: string = 'visitor'): Promise<boolean> {
+export async function likeBook(bookId: string, userId?: string): Promise<boolean> {
   try {
+    const resolvedUserId = resolveVisitorId(userId);
     console.log('📢 [likeBook] Starting with bookId:', bookId, 'userId:', userId);
     
     // Check if already liked
@@ -961,7 +967,7 @@ export async function likeBook(bookId: string, userId: string = 'visitor'): Prom
       .from('book_interactions')
       .select('id')
       .eq('book_id', bookId)
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .eq('interaction_type', 'like')
       .maybeSingle();
 
@@ -981,7 +987,7 @@ export async function likeBook(bookId: string, userId: string = 'visitor'): Prom
       .from('book_interactions')
       .insert([{
         book_id: bookId,
-        user_id: userId,
+        user_id: resolvedUserId,
         interaction_type: 'like',
       }])
       .select();
@@ -1004,19 +1010,21 @@ export async function likeBook(bookId: string, userId: string = 'visitor'): Prom
   }
 }
 
-export async function isBookLikedByUser(bookId: string, userId: string = 'visitor'): Promise<boolean> {
+export async function isBookLikedByUser(bookId: string, userId?: string): Promise<boolean> {
   try {
     if (!hasSupabaseConfig) {
       console.warn('⚠️ Supabase not configured');
       return false;
     }
 
+    const resolvedUserId = resolveVisitorId(userId);
+
     // Check if user has liked this book
     const { data, error } = await supabase
       .from('book_interactions')
       .select('id')
       .eq('book_id', bookId)
-      .eq('user_id', userId)
+      .eq('user_id', resolvedUserId)
       .eq('interaction_type', 'like')
       .maybeSingle();
 
@@ -1032,13 +1040,30 @@ export async function isBookLikedByUser(bookId: string, userId: string = 'visito
   }
 }
 
-export async function trackBookClick(bookId: string): Promise<boolean> {
+export async function trackBookClick(bookId: string, userId?: string): Promise<boolean> {
   try {
+    const resolvedUserId = resolveVisitorId(userId);
+    const { data: existing, error: checkError } = await supabase
+      .from('book_interactions')
+      .select('id')
+      .eq('book_id', bookId)
+      .eq('user_id', resolvedUserId)
+      .eq('interaction_type', 'click')
+      .maybeSingle();
+
+    if (checkError) {
+      console.warn('Warning checking existing click:', checkError);
+    }
+
+    if (existing) {
+      return true;
+    }
+
     const { data, error } = await supabase
       .from('book_interactions')
       .insert([{
         book_id: bookId,
-        user_id: 'visitor',
+        user_id: resolvedUserId,
         interaction_type: 'click',
       }])
       .select();
@@ -1056,14 +1081,31 @@ export async function trackBookClick(bookId: string): Promise<boolean> {
   }
 }
 
-export async function trackBookRead(bookId: string): Promise<boolean> {
+export async function trackBookRead(bookId: string, userId?: string): Promise<boolean> {
   try {
+    const resolvedUserId = resolveVisitorId(userId);
     console.log('📊 [trackBookRead] Starting:', bookId);
+    const { data: existing, error: checkError } = await supabase
+      .from('book_interactions')
+      .select('id')
+      .eq('book_id', bookId)
+      .eq('user_id', resolvedUserId)
+      .eq('interaction_type', 'read')
+      .maybeSingle();
+
+    if (checkError) {
+      console.warn('Warning checking existing read:', checkError);
+    }
+
+    if (existing) {
+      return true;
+    }
+
     const { data, error } = await supabase
       .from('book_interactions')
       .insert([{
         book_id: bookId,
-        user_id: 'visitor',
+        user_id: resolvedUserId,
         interaction_type: 'read',
       }])
       .select();
@@ -1318,9 +1360,9 @@ export async function deleteSubscriber(subscriberId: string): Promise<{ success:
  */
 export async function getBookLikeCount(bookId: string): Promise<number> {
   try {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('book_interactions')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .eq('book_id', bookId)
       .eq('interaction_type', 'like');
 
@@ -1329,7 +1371,7 @@ export async function getBookLikeCount(bookId: string): Promise<number> {
       return 0;
     }
 
-    return (data || []).length;
+    return count || 0;
   } catch (error) {
     console.error('Error in getBookLikeCount:', error);
     return 0;
@@ -1363,9 +1405,9 @@ export async function getCommentLikesForBook(bookId: string): Promise<number> {
  */
 export async function getBookReadCount(bookId: string): Promise<number> {
   try {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('book_interactions')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .eq('book_id', bookId)
       .eq('interaction_type', 'read');
 
@@ -1374,7 +1416,7 @@ export async function getBookReadCount(bookId: string): Promise<number> {
       return 0;
     }
 
-    return (data || []).length;
+    return count || 0;
   } catch (error) {
     console.error('Error in getBookReadCount:', error);
     return 0;
@@ -1386,9 +1428,9 @@ export async function getBookReadCount(bookId: string): Promise<number> {
  */
 export async function getBookClickCount(bookId: string): Promise<number> {
   try {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('book_interactions')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .eq('book_id', bookId)
       .eq('interaction_type', 'click');
 
@@ -1397,7 +1439,7 @@ export async function getBookClickCount(bookId: string): Promise<number> {
       return 0;
     }
 
-    return (data || []).length;
+    return count || 0;
   } catch (error) {
     console.error('Error in getBookClickCount:', error);
     return 0;
@@ -1413,16 +1455,17 @@ export async function getBookClickCount(bookId: string): Promise<number> {
  */
 export async function getTotalReadsCount(): Promise<number> {
   try {
-    const { data, error } = await supabase
-      .from('books')
-      .select('total_reads');
+    const { count, error } = await supabase
+      .from('book_interactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('interaction_type', 'read');
 
     if (error) {
       console.error('Error calculating total reads:', error);
       return 0;
     }
 
-    const total = (data || []).reduce((sum, book) => sum + (book.total_reads || 0), 0);
+    const total = count || 0;
     console.log('📚 Total reads calculated:', total);
     return total;
   } catch (error) {

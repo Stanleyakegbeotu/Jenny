@@ -85,7 +85,7 @@ export function CommentsManagement() {
         <CardHeader>
           <CardTitle>All Comments</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[70vh] overflow-y-auto pr-2">
           {loading ? (
             <p className="text-muted-foreground">Loading comments...</p>
           ) : comments.length === 0 ? (

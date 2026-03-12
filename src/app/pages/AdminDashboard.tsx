@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { useTheme } from '../contexts/ThemeContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { useAppBadge } from '../../hooks/useAppBadge';
-import { fetchBooks, fetchSubscribers } from '../../lib/supabaseClient';
+import { fetchBooks, fetchSubscribers, getBookReadCount, getBookClickCount, getBookLikeCount } from '../../lib/supabaseClient';
 import { publishChanges } from '../../lib/publishManager';
 
 export function AdminDashboard() {
@@ -48,10 +48,15 @@ export function AdminDashboard() {
         const books = await fetchBooks();
         const subscribers = await fetchSubscribers();
 
-        // Calculate current engagement metrics
-        const totalReads = books.reduce((sum, book) => sum + (book.totalReads || 0), 0);
-        const totalClicks = books.reduce((sum, book) => sum + (book.clicks || 0), 0);
-        const totalLikes = books.reduce((sum, book) => sum + (book.likes || 0), 0);
+        const [readCounts, clickCounts, likeCounts] = await Promise.all([
+          Promise.all(books.map((book) => getBookReadCount(book.id))),
+          Promise.all(books.map((book) => getBookClickCount(book.id))),
+          Promise.all(books.map((book) => getBookLikeCount(book.id))),
+        ]);
+
+        const totalReads = readCounts.reduce((sum, count) => sum + count, 0);
+        const totalClicks = clickCounts.reduce((sum, count) => sum + count, 0);
+        const totalLikes = likeCounts.reduce((sum, count) => sum + count, 0);
         const totalEngagement = totalReads + totalClicks + totalLikes + subscribers.length;
 
         // Get last tracked engagement count

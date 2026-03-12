@@ -4,6 +4,7 @@ import { BookOpen, Users, Heart } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useI18n } from '../../../hooks/useI18n';
 import { getAuthorSettings as getAuthorSettingsFromDB } from '../../../lib/siteSettings';
+import { getTotalReadsCount } from '../../../lib/supabaseClient';
 import { subscribeToPublish } from '../../../lib/publishManager';
 
 interface AuthorSettings {
@@ -23,14 +24,17 @@ export function AboutSection() {
     const loadSettings = async () => {
       try {
         console.log('🔄 [AboutSection] Fetching author settings from database...');
-        const settings = await getAuthorSettingsFromDB();
+        const [settings, totalReads] = await Promise.all([
+          getAuthorSettingsFromDB(),
+          getTotalReadsCount(),
+        ]);
         if (settings) {
           console.log('✅ [AboutSection] Settings loaded:', settings.name);
           setAuthorSettings({
             name: settings.name || 'NENSHA JENNIFER',
             bio: settings.bio || '',
             profileImage: settings.profileImage,
-            totalReads: settings.totalReads || 0,
+            totalReads,
             booksPublished: settings.booksPublished || 0,
             subscribers: settings.subscribers || 0,
           });
@@ -39,7 +43,7 @@ export function AboutSection() {
           setAuthorSettings({
             name: 'NENSHA JENNIFER',
             bio: '',
-            totalReads: 0,
+            totalReads,
             booksPublished: 0,
             subscribers: 0,
           });

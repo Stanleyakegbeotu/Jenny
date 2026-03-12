@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Users, BookOpen, Eye, Mail, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { fetchBooks, fetchSubscribers } from '../../../lib/supabaseClient';
+import { fetchBooks, fetchSubscribers, getBookReadCount, getBookClickCount, getBookLikeCount } from '../../../lib/supabaseClient';
 
 interface StatItem {
   title: string;
@@ -39,10 +39,15 @@ export function DashboardOverview({ onNavigateTo }: DashboardOverviewProps) {
         // Fetch subscribers
         const subscribers = await fetchSubscribers();
 
-        // Calculate real statistics
-        const totalReads = books.reduce((sum, book) => sum + (book.totalReads || 0), 0);
-        const totalClicks = books.reduce((sum, book) => sum + (book.clicks || 0), 0);
-        const totalLikes = books.reduce((sum, book) => sum + (book.likes || 0), 0);
+        const [readCounts, clickCounts, likeCounts] = await Promise.all([
+          Promise.all(books.map((book) => getBookReadCount(book.id))),
+          Promise.all(books.map((book) => getBookClickCount(book.id))),
+          Promise.all(books.map((book) => getBookLikeCount(book.id))),
+        ]);
+
+        const totalReads = readCounts.reduce((sum, count) => sum + count, 0);
+        const totalClicks = clickCounts.reduce((sum, count) => sum + count, 0);
+        const totalLikes = likeCounts.reduce((sum, count) => sum + count, 0);
         const subscriberCount = subscribers.length;
 
         // Build stats array with real data
@@ -84,13 +89,17 @@ export function DashboardOverview({ onNavigateTo }: DashboardOverviewProps) {
 
         // Add recent book reads
         books
-          .filter(book => book.totalReads && book.totalReads > 0)
-          .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+          .map((book, index) => ({
+            book,
+            reads: readCounts[index] || 0,
+          }))
+          .filter(entry => entry.reads > 0)
+          .sort((a, b) => new Date(b.book.updated_at).getTime() - new Date(a.book.updated_at).getTime())
           .slice(0, 3)
-          .forEach(book => {
+          .forEach(entry => {
             activities.push({
               action: 'Book read',
-              detail: `${book.title} - ${book.totalReads} total reads`,
+              detail: `${entry.book.title} - ${entry.reads} total reads`,
               time: 'Recently',
               type: 'book_read',
               page: 'analytics',

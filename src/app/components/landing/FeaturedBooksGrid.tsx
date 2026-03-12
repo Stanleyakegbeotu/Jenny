@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { ChevronLeft, ChevronRight, Eye, BookOpen } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { fetchBooks, Book as SupabaseBook } from '../../../lib/supabaseClient';
+import { fetchBooks, Book as SupabaseBook, getBookReadCount } from '../../../lib/supabaseClient';
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
 import { useI18n } from '../../../hooks/useI18n';
 
@@ -14,6 +14,7 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
   const [books, setBooks] = useState<SupabaseBook[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [readCounts, setReadCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function loadBooks() {
@@ -22,6 +23,12 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
         const fetchedBooks = await fetchBooks();
         console.log('✅ [FeaturedBooksGrid] Loaded', fetchedBooks.length, 'featured books');
         setBooks(fetchedBooks);
+        const counts = await Promise.all(fetchedBooks.map((book) => getBookReadCount(book.id)));
+        const nextCounts: Record<string, number> = {};
+        fetchedBooks.forEach((book, index) => {
+          nextCounts[book.id] = counts[index] || 0;
+        });
+        setReadCounts(nextCounts);
         setCurrentPage(0);
       } catch (error) {
         console.error('❌ [FeaturedBooksGrid] Error loading books:', error);
@@ -132,7 +139,7 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
                   <div className="flex items-center gap-2 mb-4">
                     <Eye className="w-4 h-4 text-primary" />
                     <span className="text-sm text-white/80">
-                      {book.totalReads || 0} {t('featured.reads', 'Reads')}
+                      {readCounts[book.id] || 0} {t('featured.reads', 'Reads')}
                     </span>
                   </div>
 
