@@ -142,21 +142,17 @@ export function AboutSection() {
               {!authorSettings?.bio && (
                 <>
                   <p>
-                    {authorSettings?.name || 'NENSHA JENNIFER'} is an internationally acclaimed romance author whose stories have
-                    captivated millions of readers across the globe. With a gift for crafting deeply
-                    emotional narratives, she weaves tales of love, passion, and redemption that
-                    resonate with readers of all backgrounds.
+                    {t('about.fallbackP1', '{name} is an internationally acclaimed romance author whose stories have captivated millions of readers across the globe. With a gift for crafting deeply emotional narratives, she weaves tales of love, passion, and redemption that resonate with readers of all backgrounds.')
+                      .replace('{name}', authorSettings?.name || 'NENSHA JENNIFER')}
                   </p>
                   <p>
-                    Her writing journey began with a simple belief: that love, in all its forms, is the
-                    most powerful force in the universe. This philosophy shines through in every story
-                    she tells, creating characters and relationships that feel authentic, raw, and
-                    beautifully human.
+                    {t('about.fallbackP2', 'Her writing journey began with a simple belief: that love, in all its forms, is the most powerful force in the universe. This philosophy shines through in every story she tells, creating characters and relationships that feel authentic, raw, and beautifully human.')}
                   </p>
                   <p>
-                    When she's not writing, she enjoys traveling to new destinations for inspiration,
-                    spending time with her family, and connecting with her incredible community of
-                    readers who have become like family.
+                    {t(
+                      'about.fallbackP3',
+                      "When she's not writing, she enjoys traveling to new destinations for inspiration, spending time with her family, and connecting with her incredible community of readers who have become like family."
+                    )}
                   </p>
                 </>
               )}

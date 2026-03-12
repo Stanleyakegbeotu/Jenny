@@ -60,6 +60,8 @@ export interface BookComment {
   parentCommentId?: string;
 }
 
+export type ReactionType = 'like' | 'love' | 'wow' | 'sad' | 'angry';
+
 export interface BookInteraction {
   bookId: string;
   userId: string;
@@ -104,6 +106,24 @@ export interface AnalyticsEvent {
   timestamp: string;
 }
 
+function mapBookFromDb(row: any): Book {
+  if (!row) return row;
+  return {
+    ...row,
+    totalReads: row.total_reads ?? row.totalReads ?? 0,
+    commentCount: row.comment_count ?? row.commentCount ?? 0,
+  };
+}
+
+function normalizeBookForDb(data: Partial<Book>): Record<string, any> {
+  const { totalReads, commentCount, ...rest } = data as any;
+  return {
+    ...rest,
+    ...(totalReads !== undefined ? { total_reads: totalReads } : {}),
+    ...(commentCount !== undefined ? { comment_count: commentCount } : {}),
+  };
+}
+
 // Books Functions
 export async function fetchBooks(): Promise<Book[]> {
   try {
@@ -122,7 +142,7 @@ export async function fetchBooks(): Promise<Book[]> {
       throw error;
     }
     console.log('✅ [fetchBooks] Returning', data?.length || 0, 'books');
-    return data || [];
+    return (data || []).map(mapBookFromDb);
   } catch (error) {
     console.error('❌ [fetchBooks] Exception:', error);
     return [];
@@ -138,7 +158,7 @@ export async function fetchBook(id: string): Promise<Book | null> {
       .single();
 
     if (error) throw error;
-    return data;
+    return mapBookFromDb(data);
   } catch (error) {
     console.error('Error fetching book:', error);
     return null;
@@ -147,11 +167,12 @@ export async function fetchBook(id: string): Promise<Book | null> {
 
 export async function createBook(book: Omit<Book, 'id' | 'created_at' | 'updated_at'>): Promise<Book | null> {
   try {
-    console.log('📚 [createBook] Starting book creation with data:', book);
-    
+    console.log('???? [createBook] Starting book creation with data:', book);
+    const payload = normalizeBookForDb(book);
+
     const { data, error, status } = await supabase
       .from('books')
-      .insert([book])
+      .insert([payload])
       .select()
       .single();
 
@@ -165,7 +186,7 @@ export async function createBook(book: Omit<Book, 'id' | 'created_at' | 'updated
     }
     
     console.log('✅ [createBook] Book created successfully:', data?.id);
-    return data;
+    return mapBookFromDb(data);
   } catch (error) {
     console.error('❌ [createBook] Exception caught:', error);
     const errorMsg = error instanceof Error ? error.message : JSON.stringify(error);
@@ -176,15 +197,16 @@ export async function createBook(book: Omit<Book, 'id' | 'created_at' | 'updated
 
 export async function updateBook(id: string, updates: Partial<Book>): Promise<Book | null> {
   try {
+    const payload = normalizeBookForDb(updates);
     const { data, error } = await supabase
       .from('books')
-      .update(updates)
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return mapBookFromDb(data);
   } catch (error) {
     console.error('Error updating book:', error);
     return null;
@@ -578,6 +600,38 @@ export async function uploadAuthorImage(file: File, authorId: string): Promise<s
   }
 }
 
+export async function uploadHeroImage(file: File, heroId: string): Promise<string | null> {
+  try {
+    if (!hasSupabaseConfig) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          resolve(e.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${heroId}-${Date.now()}.${fileExt}`;
+
+    const { error } = await supabase.storage
+      .from('hero-images')
+      .upload(fileName, file, { upsert: true });
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+      .from('hero-images')
+      .getPublicUrl(fileName);
+
+    return data.publicUrl;
+  } catch (error) {
+    console.error('Error uploading hero image:', error);
+    return null;
+  }
+}
+
 export async function uploadCover(file: File, bookId: string): Promise<string | null> {
   try {
     if (!hasSupabaseConfig) {
@@ -770,12 +824,11 @@ export async function getBookComments(bookId: string): Promise<BookComment[]> {
       .from('book_comments')
       .select('*')
       .eq('book_id', bookId)
-      .is('parent_comment_id', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: true });
 
     if (error) throw error;
 
-    return (data || []).map(c => ({
+    const normalized = (data || []).map(c => ({
       id: c.id,
       bookId: c.book_id,
       author: c.author,
@@ -786,6 +839,25 @@ export async function getBookComments(bookId: string): Promise<BookComment[]> {
       createdAt: c.created_at,
       parentCommentId: c.parent_comment_id,
     }));
+
+    const byId = new Map<string, BookComment>();
+    normalized.forEach((c) => byId.set(c.id, c));
+
+    const roots: BookComment[] = [];
+    normalized.forEach((c) => {
+      if (c.parentCommentId) {
+        const parent = byId.get(c.parentCommentId);
+        if (parent) {
+          parent.replies.push(c);
+        } else {
+          roots.push(c);
+        }
+      } else {
+        roots.push(c);
+      }
+    });
+
+    return roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   } catch (error) {
     console.error('Error fetching comments:', error);
     return [];
@@ -797,8 +869,7 @@ export async function getBookCommentsCount(bookId: string): Promise<number> {
     const { count, error } = await supabase
       .from('book_comments')
       .select('*', { count: 'exact', head: true })
-      .eq('book_id', bookId)
-      .is('parent_comment_id', null);
+      .eq('book_id', bookId);
 
     if (error) throw error;
     return count || 0;
@@ -1051,6 +1122,165 @@ export async function likeComment(commentId: string): Promise<boolean> {
   } catch (error) {
     console.error('❌ Exception liking comment:', error);
     return false;
+  }
+}
+
+export interface AdminBookComment extends BookComment {
+  bookTitle?: string;
+}
+
+export async function fetchAllComments(): Promise<AdminBookComment[]> {
+  try {
+    const { data, error } = await supabase
+      .from('book_comments')
+      .select('*, books(title)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((c: any) => ({
+      id: c.id,
+      bookId: c.book_id,
+      author: c.author,
+      isAdmin: c.is_admin,
+      content: c.content,
+      likes: c.likes,
+      replies: [],
+      createdAt: c.created_at,
+      parentCommentId: c.parent_comment_id,
+      bookTitle: c.books?.title,
+    }));
+  } catch (error) {
+    console.error('Error fetching all comments:', error);
+    return [];
+  }
+}
+
+// ============================================================================
+// BOOK REACTIONS (MULTI-CHOICE)
+// ============================================================================
+
+export async function getBookReactionsSummary(bookId: string): Promise<Record<string, number>> {
+  try {
+    const { data, error } = await supabase
+      .from('book_reactions')
+      .select('reaction_type')
+      .eq('book_id', bookId);
+
+    if (error) throw error;
+    const summary: Record<string, number> = {};
+    (data || []).forEach((row: any) => {
+      const key = row.reaction_type || 'like';
+      summary[key] = (summary[key] || 0) + 1;
+    });
+    return summary;
+  } catch (error) {
+    console.error('Error fetching book reactions:', error);
+    return {};
+  }
+}
+
+export async function getUserBookReaction(bookId: string, visitorId: string): Promise<ReactionType | null> {
+  try {
+    const { data, error } = await supabase
+      .from('book_reactions')
+      .select('reaction_type')
+      .eq('book_id', bookId)
+      .eq('visitor_id', visitorId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return (data?.reaction_type as ReactionType) || null;
+  } catch (error) {
+    console.error('Error fetching user reaction:', error);
+    return null;
+  }
+}
+
+export async function addBookReaction(
+  bookId: string,
+  visitorId: string,
+  reactionType: ReactionType
+): Promise<{ success: boolean; alreadyReacted?: boolean }> {
+  try {
+    const existing = await getUserBookReaction(bookId, visitorId);
+    if (existing) {
+      return { success: false, alreadyReacted: true };
+    }
+
+    const { error } = await supabase
+      .from('book_reactions')
+      .insert([{ book_id: bookId, visitor_id: visitorId, reaction_type: reactionType }]);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding reaction:', error);
+    return { success: false };
+  }
+}
+
+// ============================================================================
+// COMMENT REACTIONS (MULTI-CHOICE)
+// ============================================================================
+
+export async function getCommentReactionsSummary(commentId: string): Promise<Record<string, number>> {
+  try {
+    const { data, error } = await supabase
+      .from('book_comment_reactions')
+      .select('reaction_type')
+      .eq('comment_id', commentId);
+
+    if (error) throw error;
+    const summary: Record<string, number> = {};
+    (data || []).forEach((row: any) => {
+      const key = row.reaction_type || 'like';
+      summary[key] = (summary[key] || 0) + 1;
+    });
+    return summary;
+  } catch (error) {
+    console.error('Error fetching comment reactions:', error);
+    return {};
+  }
+}
+
+export async function getUserCommentReaction(commentId: string, visitorId: string): Promise<ReactionType | null> {
+  try {
+    const { data, error } = await supabase
+      .from('book_comment_reactions')
+      .select('reaction_type')
+      .eq('comment_id', commentId)
+      .eq('visitor_id', visitorId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return (data?.reaction_type as ReactionType) || null;
+  } catch (error) {
+    console.error('Error fetching user comment reaction:', error);
+    return null;
+  }
+}
+
+export async function addCommentReaction(
+  commentId: string,
+  visitorId: string,
+  reactionType: ReactionType
+): Promise<{ success: boolean; alreadyReacted?: boolean }> {
+  try {
+    const existing = await getUserCommentReaction(commentId, visitorId);
+    if (existing) {
+      return { success: false, alreadyReacted: true };
+    }
+
+    const { error } = await supabase
+      .from('book_comment_reactions')
+      .insert([{ comment_id: commentId, visitor_id: visitorId, reaction_type: reactionType }]);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error adding comment reaction:', error);
+    return { success: false };
   }
 }
 

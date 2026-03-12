@@ -15,6 +15,8 @@ import {
   upsertNotificationSettings as upsertNotificationSettingsInDB,
   getHeroSettings as getHeroSettingsFromDB,
   upsertHeroSettings as upsertHeroSettingsInDB,
+  getSiteSettings as getSiteSettingsFromDB,
+  upsertSiteSettings as upsertSiteSettingsInDB,
   AuthorSettings as DBAuthorSettings,
   NotificationSettings as DBNotificationSettings,
   HeroSettings as DBHeroSettings,
@@ -23,7 +25,10 @@ import {
   getTotalReadsCount,
   getTotalBooksPublished,
   getTotalSubscribersCount,
+  uploadAuthorImage,
+  uploadHeroImage,
 } from '../../../lib/supabaseClient';
+import { publishChanges } from '../../../lib/publishManager';
 
 interface Review {
   id: string;
@@ -73,6 +78,9 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'author' | 'reviews' | 'hero' | 'site' | 'notifications' | 'formspree'>('author');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
+  const [isUploadingAuthorImage, setIsUploadingAuthorImage] = useState(false);
+  const [isUploadingHeroImage, setIsUploadingHeroImage] = useState(false);
+  const [heroSettingsId, setHeroSettingsId] = useState<string | undefined>(undefined);
 
   // Author Settings
   const [authorSettings, setAuthorSettings] = useState<AuthorSettings>({
@@ -108,10 +116,11 @@ export function SettingsPage() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const [author, notifications, hero] = await Promise.all([
+        const [author, notifications, hero, site] = await Promise.all([
           getAuthorSettingsFromDB(),
           getNotificationSettingsFromDB(),
           getHeroSettingsFromDB(),
+          getSiteSettingsFromDB(),
         ]);
 
         if (author) {
@@ -140,15 +149,23 @@ export function SettingsPage() {
           });
         }
 
+        if (site) {
+          setSiteSettings((prev) => ({
+            ...prev,
+            siteTitle: site.siteTitle,
+            siteTagline: site.siteTagline,
+            supportEmail: site.supportEmail,
+            platformLinks: site.platformLinks || [],
+          }));
+        }
+
         if (hero) {
-          console.log('🚀 [SettingsPage] Hero settings loaded:', hero);
-          setSiteSettings({
-            siteTitle: 'Nensha Jennifer - Romance Author',
-            siteTagline: 'Discover captivating romance stories from acclaimed author Jennifer Nensha',
-            supportEmail: 'support@jennifernens.com',
+          console.log('???? [SettingsPage] Hero settings loaded:', hero);
+          setHeroSettingsId(hero.id);
+          setSiteSettings((prev) => ({
+            ...prev,
             heroImage: hero.heroImage || '',
-            platformLinks: [],
-          });
+          }));
         }
       } catch (err) {
         console.error('❌ [SettingsPage] Error loading settings from Supabase:', err);
@@ -192,12 +209,19 @@ export function SettingsPage() {
         notificationSettings as unknown as DBNotificationSettings
       );
       const heroResult = await upsertHeroSettingsInDB({
-        id: siteSettings.heroImage ? 'default' : undefined,
+        id: heroSettingsId,
         heroImage: siteSettings.heroImage,
       } as unknown as DBHeroSettings);
+      const siteResult = await upsertSiteSettingsInDB({
+        siteTitle: siteSettings.siteTitle,
+        siteTagline: siteSettings.siteTagline,
+        supportEmail: siteSettings.supportEmail,
+        platformLinks: siteSettings.platformLinks || [],
+      });
 
-      if (authorResult && notificationResult && heroResult) {
-        console.log('✅ [SettingsPage] All settings upserted to Supabase successfully');
+      if (authorResult && notificationResult && heroResult && siteResult) {
+        console.log('??? [SettingsPage] All settings upserted to Supabase successfully');
+        publishChanges('full-refresh', 'Settings updated');
         setSaveState('success');
         setTimeout(() => setSaveState('idle'), 3000);
       } else {
@@ -293,22 +317,31 @@ export function SettingsPage() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
+                      if (!file) return;
+                      setIsUploadingAuthorImage(true);
+                      try {
+                        const url = await uploadAuthorImage(file, authorSettings.id || 'author');
+                        if (url) {
                           setAuthorSettings({
                             ...authorSettings,
-                            profileImage: event.target?.result as string,
+                            profileImage: url,
                           });
-                        };
-                        reader.readAsDataURL(file);
+                        }
+                      } catch (err) {
+                        console.error('Error uploading author image:', err);
+                      } finally {
+                        setIsUploadingAuthorImage(false);
                       }
                     }}
+                    disabled={isUploadingAuthorImage}
                     className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                     title="Upload profile image"
                   />
+                  {isUploadingAuthorImage && (
+                    <p className="text-xs text-muted-foreground mt-2">Uploading image...</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -480,7 +513,8 @@ export function SettingsPage() {
                     try {
                       const result = await upsertAuthorSettingsInDB(updatedSettings as unknown as DBAuthorSettings);
                       if (result) {
-                        console.log('✅ Review added and saved to Supabase');
+                        console.log('??? Review added and saved to Supabase');
+                      publishChanges('full-refresh', 'Reviews updated');
                       }
                     } catch (err) {
                       console.error('Error adding review:', err);
@@ -525,7 +559,8 @@ export function SettingsPage() {
                               try {
                                 const result = await upsertAuthorSettingsInDB(updatedSettings as unknown as DBAuthorSettings);
                                 if (result) {
-                                  console.log('✅ Review deleted and saved to Supabase');
+                                  console.log('??? Review deleted and saved to Supabase');
+                                  publishChanges('full-refresh', 'Reviews updated');
                                 }
                               } catch (err) {
                                 console.error('Error deleting review:', err);
@@ -572,23 +607,32 @@ export function SettingsPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
+                  onChange={async (e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
+                    if (!file) return;
+                    setIsUploadingHeroImage(true);
+                    try {
+                      const url = await uploadHeroImage(file, heroSettingsId || 'hero');
+                      if (url) {
                         setSiteSettings({
                           ...siteSettings,
-                          heroImage: event.target?.result as string,
+                          heroImage: url,
                         });
-                      };
-                      reader.readAsDataURL(file);
+                      }
+                    } catch (err) {
+                      console.error('Error uploading hero image:', err);
+                    } finally {
+                      setIsUploadingHeroImage(false);
                     }
                   }}
+                  disabled={isUploadingHeroImage}
                   className="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                   title="Upload hero image"
                 />
                 <p className="text-xs text-muted-foreground mt-2">Recommended size: 1080x1080px or larger</p>
+                {isUploadingHeroImage && (
+                  <p className="text-xs text-muted-foreground mt-2">Uploading image...</p>
+                )}
               </div>
             </CardContent>
           </Card>

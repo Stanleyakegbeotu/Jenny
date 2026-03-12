@@ -11,7 +11,19 @@
   "hero": {
     "title": "Découvrez des Histoires Cinématiques",
     "subtitle": "Plongez-vous dans des récits captivants conçus avec une précision cinématographique",
-    "cta": "Explorer la Collection"
+    "cta": "Explorer la Collection",
+    "rotatingTitles": [
+      "D?couvrez des histoires cin?matographiques",
+      "Ressentez l'amour ? chaque page",
+      "Entrez dans des mondes de passion",
+      "Vivez le romantisme comme jamais"
+    ],
+    "rotatingParagraphs": [
+      "Plongez dans des r?cits captivants, con?us avec une pr?cision cin?matographique. Chaque histoire est pens?e pour vous transporter dans des univers de passion, de myst?re et d'?motions inoubliables.",
+      "Vivez l'art du storytelling gr?ce ? des personnages riches en ?motions et des intrigues finement tiss?es. D?couvrez des r?cits qui feront battre votre c?ur et resteront en vous longtemps apr?s la derni?re page.",
+      "Entrez dans des univers o? l'amour d?passe toutes les fronti?res et o? les ?motions sont profondes. Ces histoires soigneusement s?lectionn?es m?lent romance, aventure et connexion humaine authentique.",
+      "Explorez des r?cits qui capturent l'essence de l'?motion humaine dans sa forme la plus belle. Chaque chapitre est un voyage de passion, de d?sir et de pouvoir transformateur de l'amour."
+    ]
   },
   "featured": {
     "reads": "Lectures",
@@ -21,7 +33,22 @@
     "playNarration": "Écouter la Narration",
     "readOnInkitt": "Lire sur Inkitt",
     "readOnWattpad": "Lire sur Wattpad",
-    "loading": "Chargement des livres en vedette..."
+    "loading": "Chargement des livres en vedette...",
+    "title": "Livres en vedette",
+    "subtitle": "D?couvrez les derni?res histoires cr??es avec passion et ?motion",
+    "subtitleAlt": "D?couvrez nos lectures les plus r?centes et populaires",
+    "readMore": "Lire plus",
+    "readLess": "Lire moins",
+    "listenDescription": "?couter la description",
+    "stopDescription": "Arr?ter la description",
+    "previewChapterOne": "Aper?u du chapitre un",
+    "engagement": "Engagement",
+    "react": "R?agir",
+    "reacted": "R?agi",
+    "comment": "Commenter",
+    "reactions": "R?actions",
+    "readOn": "Lire sur",
+    "preview": "Aper?u"
   },
   "books": {
     "title": "Découvrez Plus d'Histoires",
@@ -31,7 +58,10 @@
     "inkitt": "Inkitt",
     "wattpad": "Wattpad",
     "noBooks": "Aucun livre disponible pour le moment.",
-    "loading": "Chargement des livres..."
+    "loading": "Chargement des livres...",
+    "readAloud": "Lire ? voix haute",
+    "stopReading": "Arr?ter la lecture",
+    "readOn": "Lire sur"
   },
   "socialProof": {
     "title": "Adoré par les Lecteurs du Monde Entier",
@@ -58,7 +88,10 @@
       "audioNarrationDesc": "Les narrations professionnelles donnent vie aux histoires avec un jeu d'acteur vocal exceptionnel",
       "community": "Communauté Mondiale",
       "communityDesc": "Connectez-vous avec des lecteurs du monde entier et partagez vos réflexions"
-    }
+    },
+    "fallbackP1": "{name} est une auteure de romance reconnue internationalement, dont les histoires ont captiv? des millions de lecteurs ? travers le monde. Avec un talent pour les r?cits profond?ment ?motionnels, elle tisse des histoires d'amour, de passion et de r?demption qui touchent tous les lecteurs.",
+    "fallbackP2": "Son parcours d'?criture a commenc? avec une conviction simple : l'amour, sous toutes ses formes, est la force la plus puissante de l'univers. Cette philosophie transpara?t dans chacune de ses histoires, cr?ant des personnages et des relations authentiques et profond?ment humaines.",
+    "fallbackP3": "Lorsqu'elle n'?crit pas, elle aime voyager vers de nouvelles destinations pour s'inspirer, passer du temps avec sa famille et se connecter avec sa formidable communaut? de lecteurs devenue une famille."
   },
   "subscribe": {
     "title": "Restez à Jour",
@@ -126,5 +159,28 @@
     "close": "Fermer",
     "search": "Rechercher",
     "filter": "Filtrer"
+  },
+  "comments": {
+    "title": "Commentaires",
+    "validationError": "Veuillez remplir tous les champs",
+    "error": "Impossible d'ajouter le commentaire. Cette fonctionnalit? peut devoir ?tre activ?e dans les param?tres.",
+    "replyValidation": "Veuillez entrer votre nom et une r?ponse",
+    "replyError": "Impossible d'ajouter la r?ponse. Veuillez r?essayer.",
+    "authorBadge": "Auteur",
+    "reply": "R?pondre",
+    "replyPlaceholder": "?crivez votre r?ponse...",
+    "posting": "Publication...",
+    "postReply": "Publier la r?ponse",
+    "name": "Votre nom",
+    "placeholder": "Partagez vos pens?es sur ce livre...",
+    "post": "Publier un commentaire",
+    "empty": "Pas encore de commentaires. Soyez le premier ? commenter !"
+  },
+  "reactions": {
+    "like": "J'aime",
+    "love": "J'adore",
+    "wow": "Waouh",
+    "sad": "Triste",
+    "angry": "F?ch?"
   }
 }

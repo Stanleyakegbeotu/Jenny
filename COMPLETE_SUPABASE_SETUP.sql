@@ -43,7 +43,11 @@ VALUES
   ('formspree_contact_form_url', '', 'Formspree endpoint for contact form (https://formspree.io/f/xxxxxxx)', 'url'),
   ('admin_notification_email', '', 'Email address to receive admin notifications', 'text'),
   ('site_name', 'NENSHA JENNIFER', 'Site name for emails and headers', 'text'),
-  ('site_email', 'info@nenshasworld.com', 'Sender email address', 'text')
+  ('site_email', 'info@nenshasworld.com', 'Sender email address', 'text'),
+  ('site_title', 'Nensha Jennifer - Romance Author', 'Site title for SEO and browser tabs', 'text'),
+  ('site_tagline', 'Discover captivating romance stories from acclaimed author Jennifer Nensha', 'Site tagline/description', 'text'),
+  ('support_email', 'support@jennifernens.com', 'Support email address', 'text'),
+  ('platform_links', '[]', 'Book platform links (JSON array)', 'json')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- ============================================================================
@@ -87,36 +91,36 @@ VALUES ('Jennifer Nensha', 'Romance author crafting tales of love and passion.',
 ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
--- 3. SITE SETTINGS EXTENDED TABLE - Stores Extended Site Configuration
+-- 3. HERO SETTINGS TABLE - Stores Hero Image
 -- ============================================================================
-DROP TABLE IF EXISTS site_settings_extended CASCADE;
+DROP TABLE IF EXISTS hero_settings CASCADE;
 
-CREATE TABLE site_settings_extended (
+CREATE TABLE hero_settings (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  site_title text DEFAULT 'Nensha Jennifer - Romance Author',
-  site_tagline text DEFAULT '',
-  support_email text DEFAULT '',
   hero_image text,
   is_default boolean DEFAULT true UNIQUE,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-ALTER TABLE site_settings_extended ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hero_settings ENABLE ROW LEVEL SECURITY;
 
 -- Policies
-DROP POLICY IF EXISTS "ext_select" ON site_settings_extended;
-CREATE POLICY "ext_select" ON site_settings_extended FOR SELECT USING (true);
+DROP POLICY IF EXISTS "hero_select" ON hero_settings;
+CREATE POLICY "hero_select" ON hero_settings FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "ext_insert" ON site_settings_extended;
-CREATE POLICY "ext_insert" ON site_settings_extended FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "hero_insert" ON hero_settings;
+CREATE POLICY "hero_insert" ON hero_settings FOR INSERT WITH CHECK (true);
 
-DROP POLICY IF EXISTS "ext_update" ON site_settings_extended;
-CREATE POLICY "ext_update" ON site_settings_extended FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "hero_update" ON hero_settings;
+CREATE POLICY "hero_update" ON hero_settings FOR UPDATE USING (true) WITH CHECK (true);
 
--- Insert default site data
-INSERT INTO site_settings_extended (site_title, site_tagline, support_email, is_default)
-VALUES ('Nensha Jennifer - Romance Author', 'Discover captivating romance stories from acclaimed author Jennifer Nensha', 'support@jennifernens.com', true)
+DROP POLICY IF EXISTS "hero_delete" ON hero_settings;
+CREATE POLICY "hero_delete" ON hero_settings FOR DELETE USING (true);
+
+-- Insert default hero settings
+INSERT INTO hero_settings (hero_image, is_default)
+VALUES ('', true)
 ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
@@ -308,8 +312,60 @@ CREATE POLICY "chapters_update" ON chapters FOR UPDATE USING (true) WITH CHECK (
 DROP POLICY IF EXISTS "chapters_delete" ON chapters;
 CREATE POLICY "chapters_delete" ON chapters FOR DELETE USING (true);
 
+
 -- ============================================================================
--- 9. BOOK COMMENTS TABLE - Stores Book Comments/Reviews
+-- 9. BOOK INTERACTIONS TABLE - Tracks Likes, Reads, Clicks
+-- ============================================================================
+DROP TABLE IF EXISTS book_interactions CASCADE;
+
+CREATE TABLE book_interactions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid REFERENCES books(id) ON DELETE CASCADE,
+  user_id text DEFAULT 'anonymous',
+  interaction_type text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX book_interactions_book_id_idx ON book_interactions(book_id);
+CREATE INDEX book_interactions_type_idx ON book_interactions(interaction_type);
+
+ALTER TABLE book_interactions ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "interactions_select" ON book_interactions;
+CREATE POLICY "interactions_select" ON book_interactions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "interactions_insert" ON book_interactions;
+CREATE POLICY "interactions_insert" ON book_interactions FOR INSERT WITH CHECK (true);
+
+
+-- ============================================================================
+-- 10. BOOK REACTIONS TABLE - Emoji/Reaction per visitor
+-- ============================================================================
+DROP TABLE IF EXISTS book_reactions CASCADE;
+
+CREATE TABLE book_reactions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid REFERENCES books(id) ON DELETE CASCADE,
+  visitor_id text NOT NULL,
+  reaction_type text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE UNIQUE INDEX book_reactions_unique_idx ON book_reactions(book_id, visitor_id);
+CREATE INDEX book_reactions_book_id_idx ON book_reactions(book_id);
+CREATE INDEX book_reactions_type_idx ON book_reactions(reaction_type);
+
+ALTER TABLE book_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "book_reactions_select" ON book_reactions;
+CREATE POLICY "book_reactions_select" ON book_reactions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "book_reactions_insert" ON book_reactions;
+CREATE POLICY "book_reactions_insert" ON book_reactions FOR INSERT WITH CHECK (true);
+
+-- ============================================================================
+-- 12. BOOK COMMENTS TABLE - Stores Book Comments/Reviews
 -- ============================================================================
 DROP TABLE IF EXISTS book_comments CASCADE;
 
@@ -320,13 +376,13 @@ CREATE TABLE book_comments (
   is_admin boolean DEFAULT false,
   content text NOT NULL,
   likes integer DEFAULT 0,
-  parent_id uuid REFERENCES book_comments(id) ON DELETE CASCADE,
+  parent_comment_id uuid REFERENCES book_comments(id) ON DELETE CASCADE,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 CREATE INDEX book_comments_book_id_idx ON book_comments(book_id);
-CREATE INDEX book_comments_parent_id_idx ON book_comments(parent_id);
+CREATE INDEX book_comments_parent_comment_id_idx ON book_comments(parent_comment_id);
 
 ALTER TABLE book_comments ENABLE ROW LEVEL SECURITY;
 
@@ -338,7 +394,32 @@ DROP POLICY IF EXISTS "comments_insert" ON book_comments;
 CREATE POLICY "comments_insert" ON book_comments FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "comments_update" ON book_comments;
-CREATE POLICY "comments_update" ON book_comments FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY \"comments_update\" ON book_comments FOR UPDATE USING \(true\) WITH CHECK \(true\);
+
+-- ============================================================================
+-- 13. BOOK COMMENT REACTIONS TABLE - Reaction per visitor
+-- ============================================================================
+DROP TABLE IF EXISTS book_comment_reactions CASCADE;
+
+CREATE TABLE book_comment_reactions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  comment_id uuid REFERENCES book_comments(id) ON DELETE CASCADE,
+  visitor_id text NOT NULL,
+  reaction_type text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE UNIQUE INDEX book_comment_reactions_unique_idx ON book_comment_reactions(comment_id, visitor_id);
+CREATE INDEX book_comment_reactions_comment_id_idx ON book_comment_reactions(comment_id);
+CREATE INDEX book_comment_reactions_type_idx ON book_comment_reactions(reaction_type);
+
+ALTER TABLE book_comment_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "book_comment_reactions_select" ON book_comment_reactions;
+CREATE POLICY "book_comment_reactions_select" ON book_comment_reactions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "book_comment_reactions_insert" ON book_comment_reactions;
+CREATE POLICY "book_comment_reactions_insert" ON book_comment_reactions FOR INSERT WITH CHECK (true);
 
 -- ============================================================================
 -- VERIFICATION - Check tables were created
@@ -350,14 +431,17 @@ SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORD
 -- Expected tables:
 -- 1. site_settings
 -- 2. author_settings  
--- 3. site_settings_extended
+-- 3. hero_settings
 -- 4. notification_settings
 -- 5. contact_messages
 -- 6. subscribers
 -- 7. analytics_events
 -- 8. books
 -- 9. chapters
--- 10. book_comments
+-- 10. book_interactions
+-- 11. book_reactions
+-- 12. book_comments
+-- 13. book_comment_reactions
 */
 
 -- ============================================================================

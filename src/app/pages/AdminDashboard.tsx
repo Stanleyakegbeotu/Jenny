@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AdminSidebar } from '../components/admin/AdminSidebar';
 import { DashboardOverview } from '../components/admin/DashboardOverview';
@@ -6,8 +6,10 @@ import { BooksManagement } from '../components/admin/BooksManagement';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
 import { SubscribersManagement } from '../components/admin/SubscribersManagement';
 import { SettingsPage } from '../components/admin/SettingsPage';
+import { CommentsManagement } from '../components/admin/CommentsManagement';
 import { Moon, Sun, Menu, Download, Bell, X, Send } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { toast } from 'sonner';
 import { useTheme } from '../contexts/ThemeContext';
 import { usePWAInstall } from '../../hooks/usePWAInstall';
 import { useAppBadge } from '../../hooks/useAppBadge';
@@ -24,6 +26,7 @@ export function AdminDashboard() {
   const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const { badgeCount, incrementBadge, clearBadge } = useAppBadge();
   const [lastActivityPage, setLastActivityPage] = useState<string>('analytics');
+  const lastTrackedEngagementRef = useRef(0);
 
   // Handle mobile responsiveness
   useEffect(() => {
@@ -52,16 +55,16 @@ export function AdminDashboard() {
         const totalEngagement = totalReads + totalClicks + totalLikes + subscribers.length;
 
         // Get last tracked engagement count
-        const lastTrackedEngagement = parseInt(localStorage.getItem('lastTrackedEngagement') || '0', 10);
+        const lastTrackedEngagement = lastTrackedEngagementRef.current;
         
         // If new engagement detected, increment badge
         if (totalEngagement > lastTrackedEngagement) {
           const newEngagements = totalEngagement - lastTrackedEngagement;
           incrementBadge(newEngagements);
-          localStorage.setItem('lastTrackedEngagement', String(totalEngagement));
+          lastTrackedEngagementRef.current = totalEngagement;
         }
 
-        localStorage.setItem('lastTrackedEngagement', String(totalEngagement));
+        lastTrackedEngagementRef.current = totalEngagement;
       } catch (error) {
         console.error('Error tracking engagement:', error);
       }
@@ -78,11 +81,17 @@ export function AdminDashboard() {
   const handlePublish = async () => {
     setIsPublishing(true);
     try {
-      await publishChanges('full-refresh', 'Admin published changes');
+      publishChanges('full-refresh', 'Admin published changes');
+      toast.success('Publish successful', {
+        description: 'Changes are now live on the landing page.',
+      });
       // Show brief indication
       setTimeout(() => setIsPublishing(false), 500);
     } catch (error) {
       console.error('Error publishing changes:', error);
+      toast.error('Publish failed', {
+        description: 'Please try again.',
+      });
       setIsPublishing(false);
     }
   };
@@ -93,6 +102,7 @@ export function AdminDashboard() {
     if (path.includes('/admin/books')) return 'books';
     if (path.includes('/admin/analytics')) return 'analytics';
     if (path.includes('/admin/subscribers')) return 'subscribers';
+    if (path.includes('/admin/comments')) return 'comments';
     if (path.includes('/admin/settings')) return 'settings';
     return 'dashboard';
   };
@@ -128,6 +138,8 @@ export function AdminDashboard() {
         return <AnalyticsDashboard />;
       case 'subscribers':
         return <SubscribersManagement />;
+      case 'comments':
+        return <CommentsManagement />;
       case 'settings':
         return <SettingsPage />;
       default:
@@ -143,7 +155,7 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-background relative">
+    <div className="flex min-h-[100svh] bg-background relative overflow-hidden">
       {/* Mobile overlay backdrop */}
       {isMobile && !sidebarCollapsed && (
         <div
@@ -157,11 +169,12 @@ export function AdminDashboard() {
         onPageChange={handlePageChange}
         collapsed={sidebarCollapsed}
         isMobile={isMobile}
+        onRequestClose={() => setSidebarCollapsed(true)}
       />
       
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-w-0 min-h-0 overflow-y-auto">
         {/* Top Bar */}
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-lg border-b border-border px-4 md:px-8 py-3 md:py-4">
+        <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-lg border-b border-border px-4 md:px-8 py-3 md:py-4">
           <div className="flex justify-between items-center gap-2 md:gap-4">
             <div className="flex items-center gap-2 md:gap-4 min-w-0 flex-1">
               <Button 

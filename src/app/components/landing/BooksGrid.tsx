@@ -7,8 +7,10 @@ import { fetchBooks, fetchChapters, Book as SupabaseBook } from '../../../lib/su
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
 import { subscribeToPublish } from '../../../lib/publishManager';
+import { useI18n } from '../../../hooks/useI18n';
 
 export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseBook) => void }) {
+  const { t } = useI18n();
   const [books, setBooks] = useState<SupabaseBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -67,17 +69,19 @@ export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseB
           <h2
             className="text-3xl md:text-4xl mb-2 font-playfair"
           >
-            Discover More Stories
+            {t('books.title', 'Discover More Stories')}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Explore a collection of romantic tales that will touch your heart and ignite your
-            imagination.
+            {t(
+              'books.subtitle',
+              'Explore a collection of romantic tales that will touch your heart and ignite your imagination.'
+            )}
           </p>
         </motion.div>
 
         {loading && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading books...</p>
+            <p className="text-muted-foreground">{t('books.loading', 'Loading books...')}</p>
           </div>
         )}
 
@@ -89,7 +93,7 @@ export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseB
 
         {!loading && books.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">No books available yet.</p>
+            <p className="text-muted-foreground">{t('books.noBooks', 'No books available yet.')}</p>
           </div>
         )}
 
@@ -106,6 +110,7 @@ export function BooksGrid({ onPreviewClick }: { onPreviewClick: (book: SupabaseB
 }
 
 function BookCard({ book, index, onPreviewClick }: { book: SupabaseBook; index: number; onPreviewClick: (book: SupabaseBook) => void }) {
+  const { t } = useI18n();
   const [isHovered, setIsHovered] = useState(false);
   const [chapter1Text, setChapter1Text] = useState<string>('');
   const { isSupported: ttsSupported, isSpeaking, speak, stop } = useTextToSpeech();
@@ -198,7 +203,7 @@ function BookCard({ book, index, onPreviewClick }: { book: SupabaseBook; index: 
               onClick={handlePreviewClick}
             >
               <BookOpen className="w-4 h-4 mr-2 text-[var(--icon-primary)]" />
-              Preview Chapter
+              {t('books.previewChapter', 'Preview Chapter')}
             </Button>
             
             {/* TTS Button */}
@@ -209,7 +214,9 @@ function BookCard({ book, index, onPreviewClick }: { book: SupabaseBook; index: 
                 onClick={handleReadAloud}
               >
                 <Volume2 className="w-4 h-4 mr-2 text-[var(--icon-warning)]" />
-                {isSpeaking ? 'Stop Reading' : 'Read Aloud'}
+                {isSpeaking
+                  ? t('books.stopReading', 'Stop Reading')
+                  : t('books.readAloud', 'Read Aloud')}
               </Button>
             )}
 
@@ -221,7 +228,7 @@ function BookCard({ book, index, onPreviewClick }: { book: SupabaseBook; index: 
                 onClick={() => handleExternalLink(book.book_platform || '', book.book_link)}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Read on {book.book_platform}
+                {t('books.readOn', 'Read on')} {book.book_platform}
               </Button>
             )}
           </div>

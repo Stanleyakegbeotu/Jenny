@@ -1,324 +1,452 @@
 -- ============================================================================
--- MASTER DATABASE SCHEMA - NENSHA JENNIFER APP
+-- COMPREHENSIVE SUPABASE SQL SETUP
 -- ============================================================================
--- This is the ONLY schema file you need. Everything is here.
--- Run this ONCE in Supabase SQL Editor.
+-- This script contains ALL necessary queries to set up the database for
+-- NENSHA JENNIFER Romance Author Platform
 -- 
--- IMPORTANT: This will DROP and recreate all tables.
--- Make sure you have backups if you want to keep existing data.
+-- Run this entire script in the Supabase SQL Editor
+-- Copy everything, paste, and execute
 -- ============================================================================
 
 -- ============================================================================
--- 1. BOOKS TABLE
+-- 1. SITE SETTINGS TABLE - Stores Configuration (Formspree URL, etc.)
 -- ============================================================================
-DROP TABLE IF EXISTS chapters CASCADE;
-DROP TABLE IF EXISTS books CASCADE;
+DROP TABLE IF EXISTS site_settings CASCADE;
 
-CREATE TABLE books (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  description TEXT,
-  author TEXT DEFAULT 'Jennifer Nensha',
-  cover_image_url TEXT,
-  release_date TIMESTAMP WITH TIME ZONE,
-  status TEXT DEFAULT 'published',
-  external_link TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+CREATE TABLE site_settings (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  setting_key text NOT NULL UNIQUE,
+  setting_value text,
+  description text,
+  setting_type text DEFAULT 'text',
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-COMMENT ON TABLE books IS 'Stores all published books by the author';
+CREATE INDEX site_settings_key_idx ON site_settings(setting_key);
 
--- Enable RLS on books
-ALTER TABLE books ENABLE ROW LEVEL SECURITY;
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "books_select_policy" ON books
-  FOR SELECT USING (true);
+-- Policies
+DROP POLICY IF EXISTS "site_settings_select" ON site_settings;
+CREATE POLICY "site_settings_select" ON site_settings FOR SELECT USING (true);
 
-CREATE POLICY "books_insert_policy" ON books
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "site_settings_update" ON site_settings;
+CREATE POLICY "site_settings_update" ON site_settings FOR UPDATE USING (true) WITH CHECK (true);
 
-CREATE POLICY "books_update_policy" ON books
-  FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "site_settings_insert" ON site_settings;
+CREATE POLICY "site_settings_insert" ON site_settings FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "books_delete_policy" ON books
-  FOR DELETE USING (true);
-
--- Indexes for books
-CREATE INDEX idx_books_created_at ON books(created_at DESC);
-CREATE INDEX idx_books_status ON books(status);
-
--- Grant permissions
-GRANT ALL ON books TO anon, authenticated;
-
--- ============================================================================
--- 2. CHAPTERS TABLE
--- ============================================================================
-CREATE TABLE chapters (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  content TEXT,
-  chapter_number INTEGER,
-  preview_text TEXT,
-  is_preview BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
-);
-
-COMMENT ON TABLE chapters IS 'Stores chapters for each book';
-
--- Enable RLS on chapters
-ALTER TABLE chapters ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "chapters_select_policy" ON chapters
-  FOR SELECT USING (true);
-
-CREATE POLICY "chapters_insert_policy" ON chapters
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "chapters_update_policy" ON chapters
-  FOR UPDATE USING (true) WITH CHECK (true);
-
-CREATE POLICY "chapters_delete_policy" ON chapters
-  FOR DELETE USING (true);
-
--- Indexes for chapters
-CREATE INDEX idx_chapters_book_id ON chapters(book_id);
-CREATE INDEX idx_chapters_chapter_number ON chapters(chapter_number);
-
--- Grant permissions
-GRANT ALL ON chapters TO anon, authenticated;
+-- Insert default settings
+INSERT INTO site_settings (setting_key, setting_value, description, setting_type)
+VALUES
+  ('formspree_contact_form_url', '', 'Formspree endpoint for contact form (https://formspree.io/f/xxxxxxx)', 'url'),
+  ('admin_notification_email', '', 'Email address to receive admin notifications', 'text'),
+  ('site_name', 'NENSHA JENNIFER', 'Site name for emails and headers', 'text'),
+  ('site_email', 'info@nenshasworld.com', 'Sender email address', 'text'),
+  ('site_title', 'Nensha Jennifer - Romance Author', 'Site title for SEO and browser tabs', 'text'),
+  ('site_tagline', 'Discover captivating romance stories from acclaimed author Jennifer Nensha', 'Site tagline/description', 'text'),
+  ('support_email', 'support@jennifernens.com', 'Support email address', 'text'),
+  ('platform_links', '[]', 'Book platform links (JSON array)', 'json')
+ON CONFLICT (setting_key) DO NOTHING;
 
 -- ============================================================================
--- 3. SUBSCRIBERS TABLE
--- ============================================================================
-DROP TABLE IF EXISTS subscribers CASCADE;
-
-CREATE TABLE subscribers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  country TEXT,
-  subscribed_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
-);
-
-COMMENT ON TABLE subscribers IS 'Stores all email subscribers';
-
--- Enable RLS on subscribers
-ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "subscribers_select_policy" ON subscribers
-  FOR SELECT USING (true);
-
-CREATE POLICY "subscribers_insert_policy" ON subscribers
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "subscribers_update_policy" ON subscribers
-  FOR UPDATE USING (true) WITH CHECK (true);
-
-CREATE POLICY "subscribers_delete_policy" ON subscribers
-  FOR DELETE USING (true);
-
--- Indexes for subscribers
-CREATE UNIQUE INDEX idx_subscribers_email ON subscribers(email);
-CREATE INDEX idx_subscribers_is_active ON subscribers(is_active);
-
--- Grant permissions
-GRANT ALL ON subscribers TO anon, authenticated;
-
--- ============================================================================
--- 4. AUTHOR SETTINGS TABLE
+-- 2. AUTHOR SETTINGS TABLE - Stores Author Profile Information
 -- ============================================================================
 DROP TABLE IF EXISTS author_settings CASCADE;
 
 CREATE TABLE author_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT DEFAULT 'Jennifer Nensha',
-  bio TEXT,
-  email TEXT,
-  profile_image TEXT,
-  total_reads INTEGER DEFAULT 0,
-  books_published INTEGER DEFAULT 0,
-  followers INTEGER DEFAULT 0,
-  instagram_url TEXT,
-  twitter_url TEXT,
-  linkedin_url TEXT,
-  reviews JSONB DEFAULT '[]'::JSONB,
-  is_default BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text DEFAULT 'Jennifer Nensha',
+  bio text DEFAULT '',
+  email text DEFAULT '',
+  profile_image text,
+  total_reads integer DEFAULT 0,
+  books_published integer DEFAULT 0,
+  followers integer DEFAULT 0,
+  instagram_url text,
+  twitter_url text,
+  linkedin_url text,
+  reviews jsonb DEFAULT '[]'::jsonb,
+  is_default boolean DEFAULT true UNIQUE,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-COMMENT ON TABLE author_settings IS 'Stores author profile information and social links';
-
--- Enable RLS on author_settings
 ALTER TABLE author_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "author_settings_select_policy" ON author_settings
-  FOR SELECT USING (true);
+-- Policies
+DROP POLICY IF EXISTS "author_select" ON author_settings;
+CREATE POLICY "author_select" ON author_settings FOR SELECT USING (true);
 
-CREATE POLICY "author_settings_insert_policy" ON author_settings
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "author_insert" ON author_settings;
+CREATE POLICY "author_insert" ON author_settings FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "author_settings_update_policy" ON author_settings
-  FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "author_update" ON author_settings;
+CREATE POLICY "author_update" ON author_settings FOR UPDATE USING (true) WITH CHECK (true);
 
-CREATE POLICY "author_settings_delete_policy" ON author_settings
-  FOR DELETE USING (true);
-
--- Indexes for author_settings
-CREATE INDEX idx_author_settings_is_default ON author_settings(is_default);
-
--- Grant permissions
-GRANT ALL ON author_settings TO anon, authenticated;
+-- Insert default author data
+INSERT INTO author_settings (name, bio, email, is_default)
+VALUES ('Jennifer Nensha', 'Romance author crafting tales of love and passion.', 'contact@jennifernens.com', true)
+ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
--- 5. HERO SETTINGS TABLE
+-- 3. HERO SETTINGS TABLE - Stores Hero Image
 -- ============================================================================
 DROP TABLE IF EXISTS hero_settings CASCADE;
 
 CREATE TABLE hero_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  hero_image TEXT,
-  is_default BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  hero_image text,
+  is_default boolean DEFAULT true UNIQUE,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-COMMENT ON TABLE hero_settings IS 'Stores hero section image for the landing page';
-
--- Enable RLS on hero_settings
 ALTER TABLE hero_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "hero_settings_select_policy" ON hero_settings
-  FOR SELECT USING (true);
+-- Policies
+DROP POLICY IF EXISTS "hero_select" ON hero_settings;
+CREATE POLICY "hero_select" ON hero_settings FOR SELECT USING (true);
 
-CREATE POLICY "hero_settings_insert_policy" ON hero_settings
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "hero_insert" ON hero_settings;
+CREATE POLICY "hero_insert" ON hero_settings FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "hero_settings_update_policy" ON hero_settings
-  FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "hero_update" ON hero_settings;
+CREATE POLICY "hero_update" ON hero_settings FOR UPDATE USING (true) WITH CHECK (true);
 
-CREATE POLICY "hero_settings_delete_policy" ON hero_settings
-  FOR DELETE USING (true);
+DROP POLICY IF EXISTS "hero_delete" ON hero_settings;
+CREATE POLICY "hero_delete" ON hero_settings FOR DELETE USING (true);
 
--- Indexes for hero_settings
-CREATE INDEX idx_hero_settings_is_default ON hero_settings(is_default);
-
--- Grant permissions
-GRANT ALL ON hero_settings TO anon, authenticated;
+-- Insert default hero settings
+INSERT INTO hero_settings (hero_image, is_default)
+VALUES ('', true)
+ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
--- 6. NOTIFICATION SETTINGS TABLE
+-- 4. NOTIFICATION SETTINGS TABLE - Stores Notification Preferences
 -- ============================================================================
 DROP TABLE IF EXISTS notification_settings CASCADE;
 
 CREATE TABLE notification_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  notify_new_subscribers BOOLEAN DEFAULT TRUE,
-  notify_contact_form BOOLEAN DEFAULT TRUE,
-  notify_book_views BOOLEAN DEFAULT FALSE,
-  is_default BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  notify_new_subscribers boolean DEFAULT true,
+  notify_contact_form boolean DEFAULT true,
+  notify_book_views boolean DEFAULT false,
+  is_default boolean DEFAULT true UNIQUE,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-COMMENT ON TABLE notification_settings IS 'Stores notification preferences for admin alerts';
-
--- Enable RLS on notification_settings
 ALTER TABLE notification_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "notification_settings_select_policy" ON notification_settings
-  FOR SELECT USING (true);
+-- Policies
+DROP POLICY IF EXISTS "notif_select" ON notification_settings;
+CREATE POLICY "notif_select" ON notification_settings FOR SELECT USING (true);
 
-CREATE POLICY "notification_settings_insert_policy" ON notification_settings
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "notif_insert" ON notification_settings;
+CREATE POLICY "notif_insert" ON notification_settings FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "notification_settings_update_policy" ON notification_settings
-  FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "notif_update" ON notification_settings;
+CREATE POLICY "notif_update" ON notification_settings FOR UPDATE USING (true) WITH CHECK (true);
 
-CREATE POLICY "notification_settings_delete_policy" ON notification_settings
-  FOR DELETE USING (true);
-
--- Indexes for notification_settings
-CREATE INDEX idx_notification_settings_is_default ON notification_settings(is_default);
-
--- Grant permissions
-GRANT ALL ON notification_settings TO anon, authenticated;
+-- Insert default notification settings
+INSERT INTO notification_settings (notify_new_subscribers, notify_contact_form, notify_book_views, is_default)
+VALUES (true, true, false, true)
+ON CONFLICT (is_default) DO UPDATE SET updated_at = now();
 
 -- ============================================================================
--- 7. BOOK VIEWS TABLE (FOR ANALYTICS)
+-- 5. CONTACT MESSAGES TABLE - Stores Contact Form Submissions
 -- ============================================================================
-DROP TABLE IF EXISTS book_views CASCADE;
+DROP TABLE IF EXISTS contact_messages CASCADE;
 
-CREATE TABLE book_views (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-  viewed_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+CREATE TABLE contact_messages (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text NOT NULL,
+  email text NOT NULL,
+  message text NOT NULL,
+  read boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-COMMENT ON TABLE book_views IS 'Tracks book view analytics';
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
 
--- Enable RLS on book_views
-ALTER TABLE book_views ENABLE ROW LEVEL SECURITY;
+-- Policies
+DROP POLICY IF EXISTS "contact_insert" ON contact_messages;
+CREATE POLICY "contact_insert" ON contact_messages FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "book_views_insert_policy" ON book_views
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "contact_select" ON contact_messages;
+CREATE POLICY "contact_select" ON contact_messages FOR SELECT USING (true);
 
-CREATE POLICY "book_views_select_policy" ON book_views
-  FOR SELECT USING (true);
-
--- Indexes for book_views
-CREATE INDEX idx_book_views_book_id ON book_views(book_id);
-CREATE INDEX idx_book_views_viewed_at ON book_views(viewed_at DESC);
-
--- Grant permissions
-GRANT ALL ON book_views TO anon, authenticated;
+DROP POLICY IF EXISTS "contact_update" ON contact_messages;
+CREATE POLICY "contact_update" ON contact_messages FOR UPDATE USING (true) WITH CHECK (true);
 
 -- ============================================================================
--- 8. FORMSPREE SETTINGS TABLE
+-- 6. SUBSCRIBERS TABLE - Stores Email Subscriber Information
 -- ============================================================================
-DROP TABLE IF EXISTS formspree_settings CASCADE;
+DROP TABLE IF EXISTS subscribers CASCADE;
 
-CREATE TABLE formspree_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  form_url TEXT NOT NULL,
-  is_default BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+CREATE TABLE subscribers (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  email text NOT NULL UNIQUE,
+  country text,
+  subscribed_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  unsubscribed_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-COMMENT ON TABLE formspree_settings IS 'Stores Formspree contact form URL';
+CREATE INDEX subscribers_email_idx ON subscribers(email);
 
--- Enable RLS on formspree_settings
-ALTER TABLE formspree_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "formspree_settings_select_policy" ON formspree_settings
-  FOR SELECT USING (true);
+-- Policies
+DROP POLICY IF EXISTS "sub_insert" ON subscribers;
+CREATE POLICY "sub_insert" ON subscribers FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "formspree_settings_insert_policy" ON formspree_settings
-  FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "sub_select" ON subscribers;
+CREATE POLICY "sub_select" ON subscribers FOR SELECT USING (true);
 
-CREATE POLICY "formspree_settings_update_policy" ON formspree_settings
-  FOR UPDATE USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "sub_update" ON subscribers;
+CREATE POLICY "sub_update" ON subscribers FOR UPDATE USING (true) WITH CHECK (true);
 
-CREATE POLICY "formspree_settings_delete_policy" ON formspree_settings
-  FOR DELETE USING (true);
-
--- Indexes for formspree_settings
-CREATE INDEX idx_formspree_settings_is_default ON formspree_settings(is_default);
-
--- Grant permissions
-GRANT ALL ON formspree_settings TO anon, authenticated;
+DROP POLICY IF EXISTS "sub_delete" ON subscribers;
+CREATE POLICY "sub_delete" ON subscribers FOR DELETE USING (true);
 
 -- ============================================================================
--- END OF SCHEMA
+-- 7. ANALYTICS EVENTS TABLE - Tracks User Engagement
 -- ============================================================================
--- All tables created successfully with proper RLS policies
--- All tables allow public read/write (anon + authenticated)
--- All tables have proper indexing for performance
--- All tables have timestamps for audit trail
+DROP TABLE IF EXISTS analytics_events CASCADE;
+
+CREATE TABLE analytics_events (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_type text NOT NULL,
+  user_id text DEFAULT 'anonymous',
+  book_id uuid,
+  metadata jsonb DEFAULT '{}'::jsonb,
+  timestamp timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX analytics_events_type_idx ON analytics_events(event_type);
+CREATE INDEX analytics_events_timestamp_idx ON analytics_events(timestamp);
+CREATE INDEX analytics_events_user_id_idx ON analytics_events(user_id);
+CREATE INDEX analytics_events_book_id_idx ON analytics_events(book_id);
+
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
+
+-- Policies - Allow anyone to insert events (anonymous analytics)
+DROP POLICY IF EXISTS "analytics_insert" ON analytics_events;
+CREATE POLICY "analytics_insert" ON analytics_events FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "analytics_select" ON analytics_events;
+CREATE POLICY "analytics_select" ON analytics_events FOR SELECT USING (true);
+
+-- ============================================================================
+-- 8. BOOKS TABLE - Stores Book Information
+-- ============================================================================
+DROP TABLE IF EXISTS books CASCADE;
+
+CREATE TABLE books (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  title text NOT NULL,
+  description text,
+  cover_url text,
+  book_link text,
+  book_platform text,
+  total_reads integer DEFAULT 0,
+  clicks integer DEFAULT 0,
+  likes integer DEFAULT 0,
+  comment_count integer DEFAULT 0,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE books ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "books_select" ON books;
+CREATE POLICY "books_select" ON books FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "books_insert" ON books;
+CREATE POLICY "books_insert" ON books FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "books_update" ON books;
+CREATE POLICY "books_update" ON books FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "books_delete" ON books;
+CREATE POLICY "books_delete" ON books FOR DELETE USING (true);
+
+-- ============================================================================
+-- 8. CHAPTERS TABLE - Book Chapters/Sections
+-- ============================================================================
+DROP TABLE IF EXISTS chapters CASCADE;
+
+CREATE TABLE chapters (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  content text,
+  preview_text text,
+  chapter_number integer DEFAULT 1,
+  "order" integer DEFAULT 1,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX chapters_book_id_idx ON chapters(book_id);
+CREATE INDEX chapters_order_idx ON chapters(book_id, "order");
+
+ALTER TABLE chapters ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "chapters_select" ON chapters;
+CREATE POLICY "chapters_select" ON chapters FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "chapters_insert" ON chapters;
+CREATE POLICY "chapters_insert" ON chapters FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "chapters_update" ON chapters;
+CREATE POLICY "chapters_update" ON chapters FOR UPDATE USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "chapters_delete" ON chapters;
+CREATE POLICY "chapters_delete" ON chapters FOR DELETE USING (true);
+
+
+-- ============================================================================
+-- 9. BOOK INTERACTIONS TABLE - Tracks Likes, Reads, Clicks
+-- ============================================================================
+DROP TABLE IF EXISTS book_interactions CASCADE;
+
+CREATE TABLE book_interactions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid REFERENCES books(id) ON DELETE CASCADE,
+  user_id text DEFAULT 'anonymous',
+  interaction_type text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX book_interactions_book_id_idx ON book_interactions(book_id);
+CREATE INDEX book_interactions_type_idx ON book_interactions(interaction_type);
+
+ALTER TABLE book_interactions ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "interactions_select" ON book_interactions;
+CREATE POLICY "interactions_select" ON book_interactions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "interactions_insert" ON book_interactions;
+CREATE POLICY "interactions_insert" ON book_interactions FOR INSERT WITH CHECK (true);
+
+
+-- ============================================================================
+-- 10. BOOK REACTIONS TABLE - Emoji/Reaction per visitor
+-- ============================================================================
+DROP TABLE IF EXISTS book_reactions CASCADE;
+
+CREATE TABLE book_reactions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid REFERENCES books(id) ON DELETE CASCADE,
+  visitor_id text NOT NULL,
+  reaction_type text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE UNIQUE INDEX book_reactions_unique_idx ON book_reactions(book_id, visitor_id);
+CREATE INDEX book_reactions_book_id_idx ON book_reactions(book_id);
+CREATE INDEX book_reactions_type_idx ON book_reactions(reaction_type);
+
+ALTER TABLE book_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "book_reactions_select" ON book_reactions;
+CREATE POLICY "book_reactions_select" ON book_reactions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "book_reactions_insert" ON book_reactions;
+CREATE POLICY "book_reactions_insert" ON book_reactions FOR INSERT WITH CHECK (true);
+
+-- ============================================================================
+-- 12. BOOK COMMENTS TABLE - Stores Book Comments/Reviews
+-- ============================================================================
+DROP TABLE IF EXISTS book_comments CASCADE;
+
+CREATE TABLE book_comments (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  book_id uuid REFERENCES books(id) ON DELETE CASCADE,
+  author text NOT NULL,
+  is_admin boolean DEFAULT false,
+  content text NOT NULL,
+  likes integer DEFAULT 0,
+  parent_comment_id uuid REFERENCES book_comments(id) ON DELETE CASCADE,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX book_comments_book_id_idx ON book_comments(book_id);
+CREATE INDEX book_comments_parent_comment_id_idx ON book_comments(parent_comment_id);
+
+ALTER TABLE book_comments ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+DROP POLICY IF EXISTS "comments_select" ON book_comments;
+CREATE POLICY "comments_select" ON book_comments FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "comments_insert" ON book_comments;
+CREATE POLICY "comments_insert" ON book_comments FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "comments_update" ON book_comments;
+CREATE POLICY \"comments_update\" ON book_comments FOR UPDATE USING \(true\) WITH CHECK \(true\);
+
+-- ============================================================================
+-- 13. BOOK COMMENT REACTIONS TABLE - Reaction per visitor
+-- ============================================================================
+DROP TABLE IF EXISTS book_comment_reactions CASCADE;
+
+CREATE TABLE book_comment_reactions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  comment_id uuid REFERENCES book_comments(id) ON DELETE CASCADE,
+  visitor_id text NOT NULL,
+  reaction_type text NOT NULL,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE UNIQUE INDEX book_comment_reactions_unique_idx ON book_comment_reactions(comment_id, visitor_id);
+CREATE INDEX book_comment_reactions_comment_id_idx ON book_comment_reactions(comment_id);
+CREATE INDEX book_comment_reactions_type_idx ON book_comment_reactions(reaction_type);
+
+ALTER TABLE book_comment_reactions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "book_comment_reactions_select" ON book_comment_reactions;
+CREATE POLICY "book_comment_reactions_select" ON book_comment_reactions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "book_comment_reactions_insert" ON book_comment_reactions;
+CREATE POLICY "book_comment_reactions_insert" ON book_comment_reactions FOR INSERT WITH CHECK (true);
+
+-- ============================================================================
+-- VERIFICATION - Check tables were created
+-- ============================================================================
+-- Run these queries to verify all tables exist:
+/*
+SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name;
+
+-- Expected tables:
+-- 1. site_settings
+-- 2. author_settings  
+-- 3. hero_settings
+-- 4. notification_settings
+-- 5. contact_messages
+-- 6. subscribers
+-- 7. analytics_events
+-- 8. books
+-- 9. chapters
+-- 10. book_interactions
+-- 11. book_reactions
+-- 12. book_comments
+-- 13. book_comment_reactions
+*/
+
+-- ============================================================================
+-- END OF SETUP SCRIPT
+-- ============================================================================
+-- All tables have been created with RLS policies and default data
+-- Your database is ready for the NENSHA JENNIFER platform!
+

@@ -11,7 +11,19 @@
   "hero": {
     "title": "Discover Cinematic Stories",
     "subtitle": "Immerse yourself in captivating narratives crafted with cinematic precision",
-    "cta": "Explore Collection"
+    "cta": "Explore Collection",
+    "rotatingTitles": [
+      "Discover Cinematic Stories",
+      "Feel Love in Every Page",
+      "Enter Worlds of Passion",
+      "Experience Romance Like Never Before"
+    ],
+    "rotatingParagraphs": [
+      "Immerse yourself in captivating narratives crafted with cinematic precision. Each story is designed to transport you into worlds of passion, mystery, and unforgettable emotions.",
+      "Experience the art of storytelling through emotionally rich characters and intricately woven plots. Discover tales that will make your heart race and linger in your mind long after the final page.",
+      "Step into universes where love transcends boundaries and emotions run deep. These carefully curated stories blend romance, adventure, and profound human connection.",
+      "Explore narratives that capture the essence of human emotion in its most beautiful form. Every chapter is a journey through passion, desire, and the transformative power of love."
+    ]
   },
   "featured": {
     "reads": "Reads",
@@ -21,7 +33,22 @@
     "playNarration": "Play Narration",
     "readOnInkitt": "Read on Inkitt",
     "readOnWattpad": "Read on Wattpad",
-    "loading": "Loading featured books..."
+    "loading": "Loading featured books...",
+    "title": "Featured Books",
+    "subtitle": "Discover the latest stories crafted with passion and emotion",
+    "subtitleAlt": "Discover our latest and most popular reads",
+    "readMore": "Read More",
+    "readLess": "Read Less",
+    "listenDescription": "Listen Description",
+    "stopDescription": "Stop Description",
+    "previewChapterOne": "Preview Chapter One",
+    "engagement": "Engagement",
+    "react": "React",
+    "reacted": "Reacted",
+    "comment": "Comment",
+    "reactions": "Reactions",
+    "readOn": "Read on",
+    "preview": "Preview"
   },
   "books": {
     "title": "Discover More Stories",
@@ -31,7 +58,10 @@
     "inkitt": "Inkitt",
     "wattpad": "Wattpad",
     "noBooks": "No books available yet.",
-    "loading": "Loading books..."
+    "loading": "Loading books...",
+    "readAloud": "Read Aloud",
+    "stopReading": "Stop Reading",
+    "readOn": "Read on"
   },
   "socialProof": {
     "title": "Loved by Readers Worldwide",
@@ -58,7 +88,10 @@
       "audioNarrationDesc": "Professional narrations bring stories to life with exceptional voice acting",
       "community": "Global Community",
       "communityDesc": "Connect with readers from around the world and share your thoughts"
-    }
+    },
+    "fallbackP1": "{name} is an internationally acclaimed romance author whose stories have captivated millions of readers across the globe. With a gift for crafting deeply emotional narratives, she weaves tales of love, passion, and redemption that resonate with readers of all backgrounds.",
+    "fallbackP2": "Her writing journey began with a simple belief: that love, in all its forms, is the most powerful force in the universe. This philosophy shines through in every story she tells, creating characters and relationships that feel authentic, raw, and beautifully human.",
+    "fallbackP3": "When she's not writing, she enjoys traveling to new destinations for inspiration, spending time with her family, and connecting with her incredible community of readers who have become like family."
   },
   "subscribe": {
     "title": "Stay Updated",
@@ -129,5 +162,28 @@
     "close": "Close",
     "search": "Search",
     "filter": "Filter"
+  },
+  "comments": {
+    "title": "Comments",
+    "validationError": "Please fill in all fields",
+    "error": "Failed to add comment. This feature may need to be enabled in settings.",
+    "replyValidation": "Please enter your name and a reply",
+    "replyError": "Failed to add reply. Please try again.",
+    "authorBadge": "Author",
+    "reply": "Reply",
+    "replyPlaceholder": "Write your reply...",
+    "posting": "Posting...",
+    "postReply": "Post Reply",
+    "name": "Your name",
+    "placeholder": "Share your thoughts about this book...",
+    "post": "Post Comment",
+    "empty": "No comments yet. Be the first to comment!"
+  },
+  "reactions": {
+    "like": "Like",
+    "love": "Love",
+    "wow": "Wow",
+    "sad": "Sad",
+    "angry": "Angry"
   }
 }

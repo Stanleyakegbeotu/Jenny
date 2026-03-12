@@ -15,6 +15,18 @@ export interface SiteSetting {
   created_at: string;
 }
 
+export interface PlatformLink {
+  name: string;
+  url: string;
+}
+
+export interface SiteSettingsExtended {
+  siteTitle: string;
+  siteTagline: string;
+  supportEmail: string;
+  platformLinks: PlatformLink[];
+}
+
 export interface AuthorSettings {
   id?: string;
   name: string;
@@ -42,6 +54,13 @@ export interface HeroSettings {
   heroImage?: string;
 }
 
+const DEFAULT_SITE_SETTINGS: SiteSettingsExtended = {
+  siteTitle: 'Nensha Jennifer - Romance Author',
+  siteTagline: 'Discover captivating romance stories from acclaimed author Jennifer Nensha',
+  supportEmail: 'support@jennifernens.com',
+  platformLinks: [],
+};
+
 /**
  * Get a specific setting by key
  */
@@ -62,6 +81,41 @@ export async function getSetting(settingKey: string): Promise<string | null> {
   } catch (err) {
     console.error(`Unexpected error fetching setting ${settingKey}:`, err);
     return null;
+  }
+}
+
+/**
+ * Upsert a specific setting by key
+ */
+export async function upsertSetting(
+  settingKey: string,
+  settingValue: string,
+  description?: string,
+  settingType: string = 'text'
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert(
+        {
+          setting_key: settingKey,
+          setting_value: settingValue,
+          description: description || null,
+          setting_type: settingType,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'setting_key' }
+      );
+
+    if (error) {
+      console.error(`Error upserting setting ${settingKey}:`, error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error(`Unexpected error upserting setting ${settingKey}:`, err);
+    return false;
   }
 }
 
@@ -98,25 +152,7 @@ export async function updateSetting(
   settingKey: string,
   settingValue: string
 ): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('site_settings')
-      .update({
-        setting_value: settingValue,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('setting_key', settingKey);
-
-    if (error) {
-      console.error(`Error updating setting ${settingKey}:`, error);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error(`Unexpected error updating setting ${settingKey}:`, err);
-    return false;
-  }
+  return upsertSetting(settingKey, settingValue);
 }
 
 /**
@@ -135,6 +171,55 @@ export async function updateFormspreeUrl(url: string): Promise<boolean> {
     console.warn('Invalid Formspree URL format. Should start with https://formspree.io/');
   }
   return updateSetting('formspree_contact_form_url', url);
+}
+
+// ============================================================================
+// SITE SETTINGS (TITLE, TAGLINE, SUPPORT EMAIL, PLATFORM LINKS)
+// ============================================================================
+
+export async function getSiteSettings(): Promise<SiteSettingsExtended> {
+  try {
+    const allSettings = await getAllSettings();
+    const platformLinksRaw = allSettings.platform_links || '[]';
+    let platformLinks: PlatformLink[] = [];
+
+    try {
+      const parsed = JSON.parse(platformLinksRaw || '[]');
+      if (Array.isArray(parsed)) {
+        platformLinks = parsed.filter(
+          (p) => p && typeof p.name === 'string' && typeof p.url === 'string'
+        );
+      }
+    } catch {
+      platformLinks = [];
+    }
+
+    return {
+      siteTitle: allSettings.site_title || DEFAULT_SITE_SETTINGS.siteTitle,
+      siteTagline: allSettings.site_tagline || DEFAULT_SITE_SETTINGS.siteTagline,
+      supportEmail: allSettings.support_email || DEFAULT_SITE_SETTINGS.supportEmail,
+      platformLinks,
+    };
+  } catch (err) {
+    console.error('Unexpected error fetching site settings:', err);
+    return DEFAULT_SITE_SETTINGS;
+  }
+}
+
+export async function upsertSiteSettings(settings: SiteSettingsExtended): Promise<boolean> {
+  try {
+    const results = await Promise.all([
+      upsertSetting('site_title', settings.siteTitle, 'Site title', 'text'),
+      upsertSetting('site_tagline', settings.siteTagline, 'Site tagline/description', 'text'),
+      upsertSetting('support_email', settings.supportEmail, 'Support email address', 'text'),
+      upsertSetting('platform_links', JSON.stringify(settings.platformLinks || []), 'Book platform links', 'json'),
+    ]);
+
+    return results.every(Boolean);
+  } catch (err) {
+    console.error('Unexpected error upserting site settings:', err);
+    return false;
+  }
 }
 
 // ============================================================================
@@ -239,7 +324,7 @@ export async function updateAuthorSettings(settings: AuthorSettings): Promise<bo
         profile_image: settings.profileImage,
         total_reads: settings.totalReads,
         books_published: settings.booksPublished,
-        followers: settings.followers,
+        followers: settings.subscribers,
         instagram_url: settings.instagramUrl,
         twitter_url: settings.twitterUrl,
         linkedin_url: settings.linkedinUrl,

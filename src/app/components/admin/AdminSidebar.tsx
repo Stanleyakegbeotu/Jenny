@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookOpen, Users, BarChart3, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, BarChart3, Settings, LogOut, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
@@ -9,6 +9,7 @@ interface AdminSidebarProps {
   onPageChange: (page: string) => void;
   collapsed: boolean;
   isMobile?: boolean;
+  onRequestClose?: () => void;
 }
 
 const menuItems = [
@@ -16,6 +17,7 @@ const menuItems = [
   { id: 'books', label: 'Books', icon: BookOpen },
   { id: 'subscribers', label: 'Subscribers', icon: Users },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'comments', label: 'Comments', icon: MessageCircle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
@@ -28,7 +30,7 @@ function JennyAppIcon() {
   );
 }
 
-export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }: AdminSidebarProps) {
+export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile, onRequestClose }: AdminSidebarProps) {
   // On mobile, sidebar should be hidden when collapsed
   const shouldHide = isMobile && collapsed;
   const navigate = useNavigate();
@@ -49,7 +51,7 @@ export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }:
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="fixed inset-0 bg-black/50 z-[99] md:hidden"
-            onClick={() => onPageChange('dashboard')} // Close sidebar when backdrop clicked
+            onClick={() => onRequestClose?.()} // Close sidebar when backdrop clicked
           />
         )}
       </AnimatePresence>
@@ -60,8 +62,10 @@ export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }:
         }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={`${
-          isMobile ? 'fixed left-0 top-0 bottom-0 z-[100] overflow-hidden' : 'relative'
-        } h-screen bg-sidebar border-r border-sidebar-border flex flex-col`}
+          isMobile ? 'fixed left-0 top-0 bottom-0 z-[100]' : 'relative'
+        } h-[100svh] bg-sidebar border-r border-sidebar-border flex flex-col overflow-x-hidden ${
+          isMobile && collapsed ? 'pointer-events-none' : ''
+        }`}
       >
       {/* Header */}
       <div className="p-6 border-b border-sidebar-border overflow-hidden">
@@ -91,7 +95,7 @@ export function AdminSidebar({ currentPage, onPageChange, collapsed, isMobile }:
       </div>
 
       {/* Navigation - scrollable container */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <nav className="p-4 space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;

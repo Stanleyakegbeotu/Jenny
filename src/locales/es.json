@@ -11,7 +11,19 @@
   "hero": {
     "title": "Descubre Historias Cinematográficas",
     "subtitle": "Sumérgete en narrativas cautivadoras elaboradas con precisión cinematográfica",
-    "cta": "Explorar Colección"
+    "cta": "Explorar Colección",
+    "rotatingTitles": [
+      "Descubre historias cinematogr?ficas",
+      "Siente el amor en cada p?gina",
+      "Entra en mundos de pasi?n",
+      "Vive el romance como nunca"
+    ],
+    "rotatingParagraphs": [
+      "Sum?rgete en narrativas cautivadoras creadas con precisi?n cinematogr?fica. Cada historia est? dise?ada para transportarte a mundos de pasi?n, misterio y emociones inolvidables.",
+      "Vive el arte de contar historias con personajes emocionalmente ricos y tramas cuidadosamente tejidas. Descubre relatos que acelerar?n tu coraz?n y permanecer?n contigo mucho despu?s de la ?ltima p?gina.",
+      "Ad?ntrate en universos donde el amor trasciende l?mites y las emociones son profundas. Estas historias cuidadosamente seleccionadas combinan romance, aventura y una conexi?n humana aut?ntica.",
+      "Explora narrativas que capturan la esencia de la emoci?n humana en su forma m?s bella. Cada cap?tulo es un viaje de pasi?n, deseo y el poder transformador del amor."
+    ]
   },
   "featured": {
     "reads": "Lecturas",
@@ -21,7 +33,22 @@
     "playNarration": "Reproducir Narración",
     "readOnInkitt": "Leer en Inkitt",
     "readOnWattpad": "Leer en Wattpad",
-    "loading": "Cargando libros destacados..."
+    "loading": "Cargando libros destacados...",
+    "title": "Libros Destacados",
+    "subtitle": "Descubre las ?ltimas historias creadas con pasi?n y emoci?n",
+    "subtitleAlt": "Descubre nuestras lecturas m?s recientes y populares",
+    "readMore": "Leer m?s",
+    "readLess": "Leer menos",
+    "listenDescription": "Escuchar descripci?n",
+    "stopDescription": "Detener descripci?n",
+    "previewChapterOne": "Previsualizar cap?tulo uno",
+    "engagement": "Interacci?n",
+    "react": "Reaccionar",
+    "reacted": "Reaccionado",
+    "comment": "Comentar",
+    "reactions": "Reacciones",
+    "readOn": "Leer en",
+    "preview": "Previsualizar"
   },
   "books": {
     "title": "Descubre Más Historias",
@@ -31,7 +58,10 @@
     "inkitt": "Inkitt",
     "wattpad": "Wattpad",
     "noBooks": "No hay libros disponibles aún.",
-    "loading": "Cargando libros..."
+    "loading": "Cargando libros...",
+    "readAloud": "Leer en voz alta",
+    "stopReading": "Detener lectura",
+    "readOn": "Leer en"
   },
   "socialProof": {
     "title": "Amado por Lectores en Todo el Mundo",
@@ -58,7 +88,10 @@
       "audioNarrationDesc": "Las narraciones profesionales dan vida a las historias con actuación de voz excepcional",
       "community": "Comunidad Global",
       "communityDesc": "Conéctate con lectores de todo el mundo y comparte tus opiniones"
-    }
+    },
+    "fallbackP1": "{name} es una autora de romance de renombre internacional cuyas historias han cautivado a millones de lectores en todo el mundo. Con un don para crear narrativas profundamente emocionales, teje historias de amor, pasi?n y redenci?n que resuenan en lectores de todas partes.",
+    "fallbackP2": "Su camino como escritora comenz? con una simple creencia: que el amor, en todas sus formas, es la fuerza m?s poderosa del universo. Esta filosof?a se refleja en cada historia que cuenta, creando personajes y relaciones aut?nticas, humanas y conmovedoras.",
+    "fallbackP3": "Cuando no est? escribiendo, disfruta viajar a nuevos destinos en busca de inspiraci?n, pasar tiempo con su familia y conectar con su incre?ble comunidad de lectores que se ha convertido en una familia."
   },
   "subscribe": {
     "title": "Mantente Actualizado",
@@ -129,5 +162,28 @@
     "close": "Cerrar",
     "search": "Buscar",
     "filter": "Filtrar"
+  },
+  "comments": {
+    "title": "Comentarios",
+    "validationError": "Por favor completa todos los campos",
+    "error": "No se pudo a?adir el comentario. Esta funci?n puede necesitar activarse en la configuraci?n.",
+    "replyValidation": "Por favor ingresa tu nombre y una respuesta",
+    "replyError": "No se pudo a?adir la respuesta. Int?ntalo de nuevo.",
+    "authorBadge": "Autor",
+    "reply": "Responder",
+    "replyPlaceholder": "Escribe tu respuesta...",
+    "posting": "Publicando...",
+    "postReply": "Publicar respuesta",
+    "name": "Tu nombre",
+    "placeholder": "Comparte tus pensamientos sobre este libro...",
+    "post": "Publicar comentario",
+    "empty": "A?n no hay comentarios. ?S? el primero en comentar!"
+  },
+  "reactions": {
+    "like": "Me gusta",
+    "love": "Me encanta",
+    "wow": "Guau",
+    "sad": "Triste",
+    "angry": "Enojado"
   }
 }

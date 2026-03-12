@@ -11,7 +11,19 @@
   "hero": {
     "title": "Descubra Histórias Cinematográficas",
     "subtitle": "Mergulhe em narrativas cativantes elaboradas com precisão cinematográfica",
-    "cta": "Explorar Coleção"
+    "cta": "Explorar Coleção",
+    "rotatingTitles": [
+      "Descubra hist?rias cinematogr?ficas",
+      "Sinta o amor em cada p?gina",
+      "Entre em mundos de paix?o",
+      "Viva o romance como nunca"
+    ],
+    "rotatingParagraphs": [
+      "Mergulhe em narrativas cativantes criadas com precis?o cinematogr?fica. Cada hist?ria ? pensada para transportar voc? a mundos de paix?o, mist?rio e emo??es inesquec?veis.",
+      "Viva a arte de contar hist?rias com personagens emocionalmente ricos e tramas cuidadosamente elaboradas. Descubra contos que acelerar?o seu cora??o e ficar?o com voc? muito depois da ?ltima p?gina.",
+      "Entre em universos onde o amor transcende limites e as emo??es s?o profundas. Essas hist?rias cuidadosamente selecionadas combinam romance, aventura e uma conex?o humana genu?na.",
+      "Explore narrativas que capturam a ess?ncia da emo??o humana em sua forma mais bela. Cada cap?tulo ? uma jornada de paix?o, desejo e o poder transformador do amor."
+    ]
   },
   "featured": {
     "reads": "Leituras",
@@ -21,7 +33,22 @@
     "playNarration": "Reproduzir Narração",
     "readOnInkitt": "Ler em Inkitt",
     "readOnWattpad": "Ler em Wattpad",
-    "loading": "Carregando livros em destaque..."
+    "loading": "Carregando livros em destaque...",
+    "title": "Livros em destaque",
+    "subtitle": "Descubra as ?ltimas hist?rias criadas com paix?o e emo??o",
+    "subtitleAlt": "Descubra nossas leituras mais recentes e populares",
+    "readMore": "Ler mais",
+    "readLess": "Ler menos",
+    "listenDescription": "Ouvir descri??o",
+    "stopDescription": "Parar descri??o",
+    "previewChapterOne": "Pr?-visualizar cap?tulo um",
+    "engagement": "Engajamento",
+    "react": "Reagir",
+    "reacted": "Reagido",
+    "comment": "Comentar",
+    "reactions": "Rea??es",
+    "readOn": "Ler em",
+    "preview": "Pr?-visualizar"
   },
   "books": {
     "title": "Descubra Mais Histórias",
@@ -31,7 +58,10 @@
     "inkitt": "Inkitt",
     "wattpad": "Wattpad",
     "noBooks": "Nenhum livro disponível no momento.",
-    "loading": "Carregando livros..."
+    "loading": "Carregando livros...",
+    "readAloud": "Ler em voz alta",
+    "stopReading": "Parar leitura",
+    "readOn": "Ler em"
   },
   "socialProof": {
     "title": "Amado por Leitores em Todo o Mundo",
@@ -58,7 +88,10 @@
       "audioNarrationDesc": "Narrações profissionais trazem histórias à vida com atuação de voz excepcional",
       "community": "Comunidade Global",
       "communityDesc": "Conecte-se com leitores de todo o mundo e compartilhe seus pensamentos"
-    }
+    },
+    "fallbackP1": "{name} e uma autora de romance reconhecida internacionalmente, cujas hist?rias cativaram milh?es de leitores ao redor do mundo. Com um talento para narrativas profundamente emocionais, ela tece hist?rias de amor, paix?o e reden??o que ressoam com leitores de todas as origens.",
+    "fallbackP2": "Sua jornada de escrita come?ou com uma cren?a simples: o amor, em todas as suas formas, ? a for?a mais poderosa do universo. Essa filosofia aparece em cada hist?ria que ela conta, criando personagens e relacionamentos aut?nticos e profundamente humanos.",
+    "fallbackP3": "Quando n?o est? escrevendo, ela gosta de viajar para novos destinos em busca de inspira??o, passar tempo com a fam?lia e se conectar com sua incr?vel comunidade de leitores que se tornou uma fam?lia."
   },
   "subscribe": {
     "title": "Mantenha-se Atualizado",
@@ -129,5 +162,28 @@
     "close": "Fechar",
     "search": "Pesquisar",
     "filter": "Filtrar"
+  },
+  "comments": {
+    "title": "Coment?rios",
+    "validationError": "Preencha todos os campos",
+    "error": "Falha ao adicionar coment?rio. Este recurso pode precisar ser ativado nas configura??es.",
+    "replyValidation": "Por favor, informe seu nome e uma resposta",
+    "replyError": "Falha ao adicionar resposta. Tente novamente.",
+    "authorBadge": "Autor",
+    "reply": "Responder",
+    "replyPlaceholder": "Escreva sua resposta...",
+    "posting": "Publicando...",
+    "postReply": "Publicar resposta",
+    "name": "Seu nome",
+    "placeholder": "Compartilhe seus pensamentos sobre este livro...",
+    "post": "Publicar coment?rio",
+    "empty": "Ainda n?o h? coment?rios. Seja o primeiro a comentar!"
+  },
+  "reactions": {
+    "like": "Curtir",
+    "love": "Amei",
+    "wow": "Uau",
+    "sad": "Triste",
+    "angry": "Bravo"
   }
 }

@@ -5,7 +5,7 @@ import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { ChevronDown, ExternalLink } from 'lucide-react';
 import { useI18n } from '../../../hooks/useI18n';
 import { trackExternalLink } from '../../../lib/analytics';
-import { getHeroSettings } from '../../../lib/siteSettings';
+import { getHeroSettings, getSiteSettings } from '../../../lib/siteSettings';
 import { subscribeToPublish } from '../../../lib/publishManager';
 
 interface PlatformLink {
@@ -18,18 +18,18 @@ interface SiteSettings {
   platformLinks?: PlatformLink[];
 }
 
-const HERO_TEXTS = [
-  "Discover Cinematic Stories",
-  "Feel Love in Every Page",
-  "Enter Worlds of Passion",
-  "Experience Romance Like Never Before"
+const DEFAULT_HERO_TEXTS = [
+  'Discover Cinematic Stories',
+  'Feel Love in Every Page',
+  'Enter Worlds of Passion',
+  'Experience Romance Like Never Before',
 ];
 
-const PARAGRAPH_TEXTS = [
-  "Immerse yourself in captivating narratives crafted with cinematic precision. Each story is designed to transport you into worlds of passion, mystery, and unforgettable emotions.",
-  "Experience the art of storytelling through emotionally rich characters and intricately woven plots. Discover tales that will make your heart race and linger in your mind long after the final page.",
-  "Step into universes where love transcends boundaries and emotions run deep. These carefully curated stories blend romance, adventure, and profound human connection.",
-  "Explore narratives that capture the essence of human emotion in its most beautiful form. Every chapter is a journey through passion, desire, and the transformative power of love."
+const DEFAULT_PARAGRAPH_TEXTS = [
+  'Immerse yourself in captivating narratives crafted with cinematic precision. Each story is designed to transport you into worlds of passion, mystery, and unforgettable emotions.',
+  'Experience the art of storytelling through emotionally rich characters and intricately woven plots. Discover tales that will make your heart race and linger in your mind long after the final page.',
+  'Step into universes where love transcends boundaries and emotions run deep. These carefully curated stories blend romance, adventure, and profound human connection.',
+  'Explore narratives that capture the essence of human emotion in its most beautiful form. Every chapter is a journey through passion, desire, and the transformative power of love.',
 ];
 
 // Typing animation component
@@ -72,29 +72,33 @@ export function HeroSection() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const heroTexts = (t('hero.rotatingTitles', { returnObjects: true }) as string[]) || DEFAULT_HERO_TEXTS;
+  const paragraphTexts =
+    (t('hero.rotatingParagraphs', { returnObjects: true }) as string[]) || DEFAULT_PARAGRAPH_TEXTS;
+
   // Rotate hero text every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setTextIndex((prev) => (prev + 1) % HERO_TEXTS.length);
+      setTextIndex((prev) => (prev + 1) % heroTexts.length);
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [heroTexts.length]);
 
   // Load site settings from Supabase
   useEffect(() => {
     const loadSettings = async () => {
       try {
         console.log('🚀 [HeroSection] Fetching hero settings from database...');
-        const heroSettings = await getHeroSettings();
-        
-        if (heroSettings) {
-          console.log('✅ [HeroSection] Hero settings loaded');
-          setSiteSettings({
-            heroImage: heroSettings.heroImage,
-            platformLinks: [],
-          });
-        }
+        const [heroSettings, site] = await Promise.all([
+          getHeroSettings(),
+          getSiteSettings(),
+        ]);
+
+        setSiteSettings({
+          heroImage: heroSettings?.heroImage,
+          platformLinks: site?.platformLinks || [],
+        });
       } catch (error) {
         console.error('❌ [HeroSection] Error loading hero settings from Supabase:', error);
         // Fall back to empty defaults
@@ -177,7 +181,7 @@ export function HeroSection() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                {HERO_TEXTS[textIndex]}
+                {heroTexts[textIndex] || DEFAULT_HERO_TEXTS[0]}
               </motion.div>
             </div>
             <motion.p 
@@ -188,7 +192,7 @@ export function HeroSection() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="text-xl text-muted-foreground mb-8 leading-relaxed max-w-lg"
             >
-              <TypingText text={PARAGRAPH_TEXTS[textIndex]} />
+              <TypingText text={paragraphTexts[textIndex] || DEFAULT_PARAGRAPH_TEXTS[0]} />
             </motion.p>
             <div className="flex flex-wrap gap-4">
               <div className="relative">

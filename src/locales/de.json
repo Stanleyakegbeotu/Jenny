@@ -11,7 +11,19 @@
   "hero": {
     "title": "Entdecken Sie Kinematische Geschichten",
     "subtitle": "Tauchen Sie ein in fesselnde Erzählungen mit kinematografischer Genauigkeit",
-    "cta": "Sammlung Erkunden"
+    "cta": "Sammlung Erkunden",
+    "rotatingTitles": [
+      "Entdecke ????????????ische Geschichten",
+      "Sp?re Liebe auf jeder Seite",
+      "Betritt Welten der Leidenschaft",
+      "Erlebe Romantik wie nie zuvor"
+    ],
+    "rotatingParagraphs": [
+      "Tauche ein in fesselnde Erz?hlungen mit ????????????ischer Pr?zision. Jede Geschichte ist darauf ausgelegt, dich in Welten voller Leidenschaft, Geheimnis und unvergesslicher Emotionen zu entf?hren.",
+      "Erlebe die Kunst des Geschichtenerz?hlens durch emotional reiche Charaktere und fein verwobene Handlungsstr?nge. Entdecke Geschichten, die dein Herz schneller schlagen lassen und lange nach der letzten Seite nachklingen.",
+      "Betritt Universen, in denen Liebe Grenzen ?berwindet und Emotionen tiefgehen. Diese sorgf?ltig kuratierten Geschichten verbinden Romantik, Abenteuer und eine echte menschliche Verbindung.",
+      "Erkunde Erz?hlungen, die die Essenz menschlicher Emotion in ihrer sch?nsten Form einfangen. Jedes Kapitel ist eine Reise durch Leidenschaft, Verlangen und die verwandelnde Kraft der Liebe."
+    ]
   },
   "featured": {
     "reads": "Aufrufe",
@@ -21,7 +33,22 @@
     "playNarration": "Erzählung Abspielen",
     "readOnInkitt": "Auf Inkitt Lesen",
     "readOnWattpad": "Auf Wattpad Lesen",
-    "loading": "Featurierte Bücher Werden Geladen..."
+    "loading": "Featurierte Bücher Werden Geladen...",
+    "title": "Vorgestellte B?cher",
+    "subtitle": "Entdecke die neuesten Geschichten voller Leidenschaft und Emotion",
+    "subtitleAlt": "Entdecke unsere neuesten und beliebtesten Lekt?ren",
+    "readMore": "Mehr lesen",
+    "readLess": "Weniger lesen",
+    "listenDescription": "Beschreibung anh?ren",
+    "stopDescription": "Beschreibung stoppen",
+    "previewChapterOne": "Kapitel eins ansehen",
+    "engagement": "Interaktion",
+    "react": "Reagieren",
+    "reacted": "Reagiert",
+    "comment": "Kommentieren",
+    "reactions": "Reaktionen",
+    "readOn": "Lesen auf",
+    "preview": "Vorschau"
   },
   "books": {
     "title": "Weitere Geschichten Entdecken",
@@ -31,7 +58,10 @@
     "inkitt": "Inkitt",
     "wattpad": "Wattpad",
     "noBooks": "Derzeit sind keine Bücher verfügbar.",
-    "loading": "Bücher Werden Geladen..."
+    "loading": "Bücher Werden Geladen...",
+    "readAloud": "Vorlesen",
+    "stopReading": "Lesen stoppen",
+    "readOn": "Lesen auf"
   },
   "socialProof": {
     "title": "Geliebt von Lesern auf der Ganzen Welt",
@@ -58,7 +88,10 @@
     "authorTitle": "Über die Autorin",
     "totalReads": "Gesamtaufrufe",
     "booksPublished": "Veröffentlichte Bücher",
-    "followers": "Follower"
+    "followers": "Follower",
+    "fallbackP1": "{name} ist eine international anerkannte Romance-Autorin, deren Geschichten Millionen von Lesern weltweit begeistert haben. Mit einem Talent f?r tief emotionale Erz?hlungen webt sie Geschichten von Liebe, Leidenschaft und Erl?sung, die Leser ?berall ber?hren.",
+    "fallbackP2": "Ihre Schreibreise begann mit einer einfachen ?berzeugung: Liebe ist in all ihren Formen die m?chtigste Kraft im Universum. Diese Philosophie zeigt sich in jeder ihrer Geschichten und schafft Figuren und Beziehungen, die authentisch und zutiefst menschlich sind.",
+    "fallbackP3": "Wenn sie nicht schreibt, reist sie gern zu neuen Zielen, um Inspiration zu sammeln, verbringt Zeit mit ihrer Familie und verbindet sich mit ihrer wunderbaren Lesergemeinschaft, die wie eine Familie geworden ist."
   },
   "subscribe": {
     "title": "Bleiben Sie Auf Dem Laufenden",
@@ -129,5 +162,28 @@
     "close": "Schließen",
     "search": "Suchen",
     "filter": "Filtern"
+  },
+  "comments": {
+    "title": "Kommentare",
+    "validationError": "Bitte alle Felder ausf?llen",
+    "error": "Kommentar konnte nicht hinzugef?gt werden. Diese Funktion muss ggf. in den Einstellungen aktiviert werden.",
+    "replyValidation": "Bitte gib deinen Namen und eine Antwort ein",
+    "replyError": "Antwort konnte nicht hinzugef?gt werden. Bitte erneut versuchen.",
+    "authorBadge": "Autor",
+    "reply": "Antworten",
+    "replyPlaceholder": "Schreibe deine Antwort...",
+    "posting": "Wird ver?ffentlicht...",
+    "postReply": "Antwort ver?ffentlichen",
+    "name": "Dein Name",
+    "placeholder": "Teile deine Gedanken zu diesem Buch...",
+    "post": "Kommentar posten",
+    "empty": "Noch keine Kommentare. Sei der Erste!"
+  },
+  "reactions": {
+    "like": "Gef?llt mir",
+    "love": "Liebe",
+    "wow": "Wow",
+    "sad": "Traurig",
+    "angry": "W?tend"
   }
 }

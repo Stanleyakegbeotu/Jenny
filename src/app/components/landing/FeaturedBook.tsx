@@ -1,13 +1,23 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, BookOpen, Users, Volume2, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Volume2, ExternalLink, MessageCircle, Heart } from 'lucide-react';
 import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
-import { fetchBooks, Book as SupabaseBook } from '../../../lib/supabaseClient';
+import {
+  fetchBooks,
+  Book as SupabaseBook,
+  getBookCommentsCount,
+  getBookReactionsSummary,
+  getUserBookReaction,
+  addBookReaction,
+  ReactionType,
+} from '../../../lib/supabaseClient';
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
 import { useTextToSpeech } from '../../../hooks/useTextToSpeech';
 import { useI18n } from '../../../hooks/useI18n';
 import { subscribeToPublish } from '../../../lib/publishManager';
+import { getVisitorId } from '../../../lib/visitorId';
+import { BookComments } from './BookComments';
 
 const FEATURED_BOOKS_PER_PAGE = 3;
 
@@ -19,6 +29,19 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const { isSupported: ttsSupported, isSpeaking, speak, stop } = useTextToSpeech();
   const [speakingBookId, setSpeakingBookId] = useState<string | null>(null);
+  const [reactionSummary, setReactionSummary] = useState<Record<string, Record<string, number>>>({});
+  const [userReactions, setUserReactions] = useState<Record<string, ReactionType | null>>({});
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
+  const [openReactions, setOpenReactions] = useState<Record<string, boolean>>({});
+  const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
+
+  const REACTIONS: { type: ReactionType; label: string; emoji: string }[] = [
+    { type: 'like', label: t('reactions.like', 'Like'), emoji: '👍' },
+    { type: 'love', label: t('reactions.love', 'Love'), emoji: '❤️' },
+    { type: 'wow', label: t('reactions.wow', 'Wow'), emoji: '😮' },
+    { type: 'sad', label: t('reactions.sad', 'Sad'), emoji: '😢' },
+    { type: 'angry', label: t('reactions.angry', 'Angry'), emoji: '😡' },
+  ];
 
   useEffect(() => {
     async function loadBooks() {
@@ -28,6 +51,26 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
         console.log('✅ [FeaturedBook] Loaded', fetchedBooks.length, 'featured books');
         setBooks(fetchedBooks);
         setCurrentPage(0);
+        const visitorId = getVisitorId();
+        const summaries = await Promise.all(
+          fetchedBooks.map(async (b) => ({
+            bookId: b.id,
+            reactions: await getBookReactionsSummary(b.id),
+            userReaction: await getUserBookReaction(b.id, visitorId),
+            comments: await getBookCommentsCount(b.id),
+          }))
+        );
+        const nextSummary: Record<string, Record<string, number>> = {};
+        const nextUser: Record<string, ReactionType | null> = {};
+        const nextComments: Record<string, number> = {};
+        summaries.forEach((s) => {
+          nextSummary[s.bookId] = s.reactions;
+          nextUser[s.bookId] = s.userReaction;
+          nextComments[s.bookId] = s.comments;
+        });
+        setReactionSummary(nextSummary);
+        setUserReactions(nextUser);
+        setCommentCounts(nextComments);
       } catch (error) {
         console.error('❌ [FeaturedBook] Error loading featured books:', error);
         setBooks([]);
@@ -115,6 +158,24 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
   };
 
+  const handleOpenReactions = (bookId: string) => {
+    setOpenReactions((prev) => ({ ...prev, [bookId]: !prev[bookId] }));
+  };
+
+  const handleOpenComments = (bookId: string) => {
+    setOpenComments((prev) => ({ ...prev, [bookId]: !prev[bookId] }));
+  };
+
+  const handleReact = async (bookId: string, reaction: ReactionType) => {
+    const visitorId = getVisitorId();
+    const result = await addBookReaction(bookId, visitorId, reaction);
+    if (result.success) {
+      const summary = await getBookReactionsSummary(bookId);
+      setReactionSummary((prev) => ({ ...prev, [bookId]: summary }));
+      setUserReactions((prev) => ({ ...prev, [bookId]: reaction }));
+    }
+  };
+
   return (
     <section className="py-24 relative overflow-hidden" id="featured-books">
       {/* Background gradient */}
@@ -127,9 +188,11 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl mb-4 font-playfair">Featured Books</h2>
+          <h2 className="text-4xl md:text-5xl mb-4 font-playfair">
+            {t('featured.title', 'Featured Books')}
+          </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover the latest stories crafted with passion and emotion
+            {t('featured.subtitle', 'Discover the latest stories crafted with passion and emotion')}
           </p>
         </motion.div>
 
@@ -182,7 +245,9 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                         onClick={() => toggleDescription(book.id)}
                         className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                       >
-                        {isDescriptionExpanded ? 'Read Less' : 'Read More'}
+                        {isDescriptionExpanded
+                          ? t('featured.readLess', 'Read Less')
+                          : t('featured.readMore', 'Read More')}
                       </button>
                     )}
                   </div>
@@ -198,22 +263,99 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                       }`}
                     >
                       <Volume2 className="w-4 h-4" />
-                      {isSpeakingDescription ? 'Stop Description' : 'Listen Description'}
+                      {isSpeakingDescription
+                        ? t('featured.stopDescription', 'Stop Description')
+                        : t('featured.listenDescription', 'Listen Description')}
                     </button>
                   )}
 
-                  {/* Preview Chapter Button */}
-                  <Button
-                    size="sm"
-                    className="bg-primary hover:bg-primary/90 w-full mb-3"
-                    onClick={() => handlePreviewClick(book)}
-                  >
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Preview Chapter One
+                {/* Preview Chapter Button */}
+                <Button
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 w-full mb-3"
+                  onClick={() => handlePreviewClick(book)}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                    {t('featured.previewChapterOne', 'Preview Chapter One')}
                   </Button>
 
-                  {/* External Links */}
-                  {book.book_link && book.book_platform && (
+                {/* Engagement + Reactions/Comments */}
+                <div className="border-t border-border/40 pt-3 mt-2 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>
+                      {t('featured.engagement', 'Engagement')}:{' '}
+                      {Object.values(reactionSummary[book.id] || {}).reduce((a, b) => a + b, 0) +
+                        (commentCounts[book.id] || 0)}
+                    </span>
+                    <span>
+                      {t('featured.comments', 'Comments')}: {commentCounts[book.id] || 0}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleOpenReactions(book.id)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-border/50 text-sm hover:bg-secondary transition-colors"
+                    >
+                      <Heart className="w-4 h-4" />
+                      {userReactions[book.id]
+                        ? t('featured.reacted', 'Reacted')
+                        : t('featured.react', 'React')}
+                    </button>
+                    <button
+                      onClick={() => handleOpenComments(book.id)}
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-border/50 text-sm hover:bg-secondary transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {t('featured.comment', 'Comment')}
+                    </button>
+                  </div>
+
+                  {openReactions[book.id] && (
+                    <div className="rounded-lg border border-border/40 bg-card p-3 space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {REACTIONS.map((r) => (
+                          <button
+                            key={r.type}
+                            onClick={() => handleReact(book.id, r.type)}
+                            disabled={!!userReactions[book.id]}
+                            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                              userReactions[book.id]
+                                ? 'bg-muted text-muted-foreground border-border/40'
+                                : 'bg-secondary hover:bg-secondary/70 border-border/50'
+                            }`}
+                            title={r.label}
+                          >
+                            <span className="mr-1">{r.emoji}</span>
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {t('featured.reactions', 'Reactions')}:{' '}
+                        {REACTIONS.map((r) => (
+                          <span key={r.type} className="mr-3">
+                            {r.emoji} {reactionSummary[book.id]?.[r.type] || 0}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {openComments[book.id] && (
+                    <div className="max-h-96 overflow-y-auto">
+                      <BookComments
+                        bookId={book.id}
+                        onCountChange={(count) =>
+                          setCommentCounts((prev) => ({ ...prev, [book.id]: count }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* External Links */}
+                {book.book_link && book.book_platform && (
                     <a
                       href={book.book_link}
                       target="_blank"
@@ -222,7 +364,7 @@ export function FeaturedBook({ onPreviewClick }: { onPreviewClick?: (book: Supab
                       className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors w-full"
                     >
                       <ExternalLink className="w-4 h-4" />
-                      Read on {book.book_platform}
+                      {t('featured.readOn', 'Read on')} {book.book_platform}
                     </a>
                   )}
                 </div>

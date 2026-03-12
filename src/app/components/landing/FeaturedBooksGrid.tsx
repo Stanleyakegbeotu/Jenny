@@ -5,10 +5,12 @@ import { Button } from '../ui/button';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { fetchBooks, Book as SupabaseBook } from '../../../lib/supabaseClient';
 import { trackBookView, trackExternalLink } from '../../../lib/analytics';
+import { useI18n } from '../../../hooks/useI18n';
 
 const MAX_BOOKS_PER_PAGE = 3;
 
 export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: SupabaseBook) => void }) {
+  const { t } = useI18n();
   const [books, setBooks] = useState<SupabaseBook[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -45,7 +47,7 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
     return (
       <section className="py-24 relative overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-6 text-center">
-          <p className="text-muted-foreground">Loading featured books...</p>
+          <p className="text-muted-foreground">{t('featured.loading', 'Loading featured books...')}</p>
         </div>
       </section>
     );
@@ -87,9 +89,9 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
           transition={{ duration: 0.8 }}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl font-playfair mb-4">Featured Books</h2>
+          <h2 className="text-5xl font-playfair mb-4">{t('featured.title', 'Featured Books')}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover our latest and most popular reads
+            {t('featured.subtitleAlt', 'Discover our latest and most popular reads')}
           </p>
         </motion.div>
 
@@ -130,7 +132,7 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
                   <div className="flex items-center gap-2 mb-4">
                     <Eye className="w-4 h-4 text-primary" />
                     <span className="text-sm text-white/80">
-                      {book.totalReads || 0} Reads
+                      {book.totalReads || 0} {t('featured.reads', 'Reads')}
                     </span>
                   </div>
 
@@ -140,7 +142,7 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
                     onClick={() => handlePreviewClick(book)}
                   >
                     <BookOpen className="w-4 h-4 mr-2" />
-                    Preview
+                    {t('featured.preview', 'Preview')}
                   </Button>
                 </div>
               </div>
@@ -159,7 +161,7 @@ export function FeaturedBooksGrid({ onPreviewClick }: { onPreviewClick?: (book: 
                   onClick={() => handlePreviewClick(book)}
                 >
                   <BookOpen className="w-4 h-4 mr-2" />
-                  Preview
+                  {t('featured.preview', 'Preview')}
                 </Button>
               </div>
             </motion.div>

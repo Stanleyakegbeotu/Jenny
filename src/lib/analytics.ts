@@ -1,4 +1,5 @@
 import { trackEvent as supabaseTrackEvent, trackBookRead, trackBookClick } from './supabaseClient';
+import { getVisitorId } from './visitorId';
 
 /**
  * Centralized analytics tracking utility
@@ -9,15 +10,15 @@ export interface TrackingMetadata {
   [key: string]: unknown;
 }
 
-// Get or create a unique visitor ID for this session
-const getVisitorId = (): string => {
-  let visitorId = localStorage.getItem('visitor_id');
-  if (!visitorId) {
-    visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem('visitor_id', visitorId);
-  }
-  return visitorId;
-};
+interface QueuedAnalyticsEvent {
+  type: string;
+  metadata?: TrackingMetadata;
+  userId: string;
+  bookId?: string;
+  timestamp: string;
+}
+
+const analyticsQueue: QueuedAnalyticsEvent[] = [];
 
 export const AnalyticsEvents = {
   BOOK_VIEW: 'book_view',
@@ -43,34 +44,30 @@ export async function trackAnalytics(
   bookId?: string
 ): Promise<void> {
   try {
-    // Get visitor ID for unique visitor tracking
-    const visitorId = userId || getVisitorId();
+    const resolvedVisitorId = userId || getVisitorId();
 
-    // Store locally first for offline support / queue backup
-    const event = {
+    const event: QueuedAnalyticsEvent = {
       type: eventType,
       metadata,
-      userId: visitorId,
+      userId: resolvedVisitorId,
       bookId,
       timestamp: new Date().toISOString(),
     };
 
-    // Save to local storage queue as backup
-    const queue = JSON.parse(localStorage.getItem('analytics_queue') || '[]');
-    queue.push(event);
-    localStorage.setItem('analytics_queue', JSON.stringify(queue.slice(-100)));
-
-    // Send to Supabase database (main tracking method)
-    console.log(`📊 Analytics: ${eventType}`, { visitorId, bookId, metadata });
-    await supabaseTrackEvent(
-      eventType,
-      visitorId,
-      bookId,
-      metadata
-    );
+    console.log(`[Analytics] ${eventType}`, { visitorId: resolvedVisitorId, bookId, metadata });
+    await supabaseTrackEvent(eventType, resolvedVisitorId, bookId, metadata);
   } catch (error) {
     console.debug('Error tracking analytics event:', error);
-    // Continue silently - don't block user interactions
+    analyticsQueue.push({
+      type: eventType,
+      metadata,
+      userId: userId || getVisitorId(),
+      bookId,
+      timestamp: new Date().toISOString(),
+    });
+    if (analyticsQueue.length > 100) {
+      analyticsQueue.shift();
+    }
   }
 }
 
@@ -149,12 +146,10 @@ export async function trackExternalLink(
   bookId?: string,
   bookTitle?: string
 ): Promise<void> {
-  // Track to database (actual interaction)
   if (bookId) {
     await trackBookClick(bookId);
   }
-  
-  // Also track to analytics (for metrics)
+
   await trackAnalytics(
     AnalyticsEvents.EXTERNAL_LINK_CLICK,
     { platform, title: bookTitle },
@@ -167,24 +162,14 @@ export async function trackExternalLink(
  * Track comment submission
  */
 export async function trackCommentSubmitted(bookId: string, authorName?: string): Promise<void> {
-  await trackAnalytics(
-    'comment_submitted',
-    { author: authorName },
-    undefined,
-    bookId
-  );
+  await trackAnalytics('comment_submitted', { author: authorName }, undefined, bookId);
 }
 
 /**
  * Track comment like
  */
 export async function trackCommentLiked(bookId: string, commentId?: string): Promise<void> {
-  await trackAnalytics(
-    'comment_liked',
-    { comment_id: commentId },
-    undefined,
-    bookId
-  );
+  await trackAnalytics('comment_liked', { comment_id: commentId }, undefined, bookId);
 }
 
 /**
@@ -195,10 +180,8 @@ export async function trackChapterRead(
   chapterId?: string,
   chapterTitle?: string
 ): Promise<void> {
-  // Track to database (actual interaction)
   await trackBookRead(bookId);
-  
-  // Also track to analytics (for metrics)
+
   await trackAnalytics(
     AnalyticsEvents.PREVIEW_READ,
     { chapter_id: chapterId, chapter_title: chapterTitle },
@@ -212,13 +195,12 @@ export async function trackChapterRead(
  */
 export async function flushOfflineEvents(): Promise<void> {
   try {
-    const queue = JSON.parse(localStorage.getItem('analytics_queue') || '[]');
-
-    if (queue.length === 0) {
+    if (analyticsQueue.length === 0) {
       return;
     }
 
-    for (const event of queue) {
+    const pending = [...analyticsQueue];
+    for (const event of pending) {
       await supabaseTrackEvent(
         event.type,
         event.userId,
@@ -227,7 +209,7 @@ export async function flushOfflineEvents(): Promise<void> {
       );
     }
 
-    localStorage.removeItem('analytics_queue');
+    analyticsQueue.length = 0;
   } catch (error) {
     console.error('Error flushing offline events:', error);
   }
@@ -241,10 +223,9 @@ export function getAnalyticsSummary(): {
   offlineEvents: number;
 } {
   try {
-    const queue = JSON.parse(localStorage.getItem('analytics_queue') || '[]');
     return {
-      totalEvents: queue.length,
-      offlineEvents: queue.filter((e: any) => !e.synced).length,
+      totalEvents: analyticsQueue.length,
+      offlineEvents: analyticsQueue.length,
     };
   } catch {
     return { totalEvents: 0, offlineEvents: 0 };

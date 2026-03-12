@@ -20,7 +20,7 @@ export function LandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
+    <div className="min-h-screen w-full bg-background text-foreground overflow-x-hidden">
       <Navbar />
       <HeroSection />
       <FeaturedBook onPreviewClick={setPreviewBook} />
